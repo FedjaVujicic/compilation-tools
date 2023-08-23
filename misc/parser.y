@@ -2,7 +2,7 @@
   #include <cstdio>
   #include <iostream>
   #include <vector>
-  #include "global.h"
+  #include "../inc/global.h"
 
   int yylex();
   void yyerror(const char *s);

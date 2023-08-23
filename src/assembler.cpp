@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
-#include "parser.hpp"
-#include "global.h"
+#include "../misc/parser.hpp"
+#include "../inc/global.h"
 
 extern FILE *yyin;
 extern std::vector<Line> allLines;
