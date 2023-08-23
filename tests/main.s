@@ -1,15 +1,18 @@
 # file: main.s
 
+.extern handler, mathAdd, mathSub, mathMul, mathDiv
 
+.global my_start
 
+.global value1, value2, value3, value4, value5, value6, value7
 
-
+.section my_code
 my_start:
     ld $0xFFFFFEFE, %sp
     ld $handler, %r1
     csrwr %r1, %handler
 
-    int  # software interrupt
+    int # software interrupt
 
     ld $1, %r1
     push %r1
@@ -55,3 +58,21 @@ my_start:
     ld value7, %r7
 
     halt
+
+.section my_data
+value1:
+.word 0
+value2:
+.word 0
+value3:
+.word 0
+value4:
+.word 0
+value5:
+.word 0
+value6:
+.word 0
+value7:
+.word 0
+
+.end

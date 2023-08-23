@@ -8,12 +8,15 @@
   void yyerror(const char *s);
 
 
+  Directive currentDirective;
+  Instruction currentInstruction;
   std::vector<Line> allLines;
   Line currentLine;
-  Instruction currentInstruction;
 
   void resetValues()
   {
+    currentDirective.mnemonic = "";
+    currentDirective.argList.clear();
     currentInstruction.mnemonic = "";
     currentInstruction.reg1 = "";
     currentInstruction.reg2 = "";
@@ -22,7 +25,19 @@
     currentInstruction.offset = "";
     currentLine.type = "";
     currentLine.label = "";
-    currentLine.instruction = currentInstruction;
+  }
+
+  void addArgument(std::string argument, std::string type)
+  {
+    currentDirective.argList.push_back({type, argument});
+  }
+
+  void createDirective()
+  {
+    currentLine.type = "directive";
+    currentLine.directive = currentDirective;
+    allLines.push_back(currentLine);
+    resetValues();
   }
 
   void createInstruction() 
@@ -32,14 +47,19 @@
     allLines.push_back(currentLine);
     resetValues();
   }
+
+  int i = 0;
 %}
 
 %union {
   char* symbol;
 }
 
+%token GLOBAL EXTERN SECTION WORD SKIP END
+
 %token HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD
 %token SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR
+
 
 %token<symbol> SYMBOL
 %token<symbol> GPR
@@ -56,10 +76,50 @@ input:
 line:
   instr                         { createInstruction(); }
 | label ':' instr               { createInstruction(); }
+| directive                     { createDirective(); }
+| label ':' directive           { createDirective(); }
 ;
 
 label:
   SYMBOL      { currentLine.label = $1; }
+;
+
+directive:
+  global
+| extern
+| section
+| word
+| skip
+| end
+;
+
+global:
+  GLOBAL SYMBOL       { currentDirective.mnemonic = "global"; addArgument($2, "symbol"); }
+| global ',' SYMBOL   { currentDirective.mnemonic = "global"; addArgument($3, "symbol"); }
+;
+
+extern:
+  EXTERN SYMBOL       { currentDirective.mnemonic = "extern"; addArgument($2, "symbol"); }
+| extern ',' SYMBOL   { currentDirective.mnemonic = "extern"; addArgument($3, "symbol"); }
+;
+
+section:
+  SECTION SYMBOL       { currentDirective.mnemonic = "section"; addArgument($2, "symbol"); }
+;
+
+word:
+  WORD NUMBER       { currentDirective.mnemonic = "word"; addArgument($2, "number"); }
+| WORD SYMBOL       { currentDirective.mnemonic = "word"; addArgument($2, "symbol"); }
+| word ',' NUMBER   { currentDirective.mnemonic = "word"; addArgument($3, "number"); }
+| word ',' SYMBOL   { currentDirective.mnemonic = "word"; addArgument($3, "symbol"); }
+;
+
+skip:
+  SKIP NUMBER       { currentDirective.mnemonic = "skip"; addArgument($2, "number"); }
+;
+
+end:
+  END       { currentDirective.mnemonic = "end"; }
 ;
 
 
@@ -235,3 +295,52 @@ offset:
  {
     fprintf (stderr, "%s\n", s);
  }
+
+// Print parsing status message
+void printParsingStatus(int parseStatus)
+{
+  if (parseStatus == 0)
+  {
+    std::cout << "Parsing successful" << std::endl;
+  }
+  else if (parseStatus == 1)
+  {
+    std::cout << "Parsing failed" << std::endl;
+  }
+  else if (parseStatus == 2)
+  {
+    std::cout << "Parsing memory exhausted" << std::endl;
+  }
+}
+
+// Print parsed instructions and directives, with all of their data
+void printParsingData()
+{
+  for (const auto &line : allLines)
+  {
+    std::cout << "label: " << line.label << std::endl
+              << "type: " << line.type << std::endl;
+
+    if (line.type == "instruction")
+    {
+      std::cout << "mnemonic: " << line.instruction.mnemonic << std::endl
+                << "reg1: " << line.instruction.reg1 << std::endl
+                << "reg2: " << line.instruction.reg2 << std::endl
+                << "operand: " << line.instruction.operand << std::endl
+                << "offset: " << line.instruction.offset << std::endl
+                << "operand_type: " << line.instruction.operand_type << std::endl
+                << std::endl;
+    }
+    else if (line.type == "directive")
+    {
+      std::cout << "mnemonic: " << line.directive.mnemonic << std::endl;
+      int i = 0;
+      for (const auto& arg : line.directive.argList)
+      {
+        std::cout << "arg " << i << ": " << arg.value << " - " << arg.type << std::endl;
+        ++i;
+      }
+      std::cout << std::endl;
+    }
+  }
+}

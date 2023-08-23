@@ -7,6 +7,12 @@
 
 %%
 
+.global                     { return GLOBAL;}
+.extern                     { return EXTERN;}
+.section                    { return SECTION;}
+.word                       { return WORD;}
+.skip                       { return SKIP;}
+.end                        { return END;}
 halt                        { return HALT; }
 int                         { return INT; }
 iret                        { return IRET; }
