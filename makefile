@@ -1,4 +1,4 @@
-all: flex bison compile
+all: flex bison compile_as
 
 flex:
 	flex -o misc/lexer.cpp misc/lexer.l
@@ -6,8 +6,8 @@ flex:
 bison:
 	bison -d -o misc/parser.cpp misc/parser.y
 
-compile:
-	g++ misc/*.cpp src/*.cpp
+compile_as:
+	g++ -o asembler misc/lexer.cpp misc/parser.cpp src/assembler.cpp src/assembler_main.cpp
 
 clean:
-	rm misc/lexer.cpp misc/parser.cpp misc/parser.hpp a.out
+	rm misc/lexer.cpp misc/parser.cpp misc/parser.hpp asembler *.o

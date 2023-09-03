@@ -1,5 +1,9 @@
+#ifndef ASSEMBLER_H
+#define ASSEMBLER_H
+
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 struct Argument {
   std::string type;
@@ -26,3 +30,25 @@ struct Line {
   Directive directive;
   Instruction instruction;
 };
+
+class Assembler
+{
+public:
+  Assembler(std::string outputFileName);
+
+  void assemble();
+
+private:
+  std::ofstream outputFile;
+};
+
+
+
+
+
+
+
+
+
+
+#endif

@@ -2,7 +2,7 @@
   #include <cstdio>
   #include <iostream>
   #include <vector>
-  #include "../inc/global.h"
+  #include "../inc/assembler.hpp"
 
   int yylex();
   void yyerror(const char *s);
@@ -10,7 +10,7 @@
 
   Directive currentDirective;
   Instruction currentInstruction;
-  std::vector<Line> allLines;
+  std::vector<Line> parsedLines;
   Line currentLine;
 
   void resetValues()
@@ -36,7 +36,7 @@
   {
     currentLine.type = "directive";
     currentLine.directive = currentDirective;
-    allLines.push_back(currentLine);
+    parsedLines.push_back(currentLine);
     resetValues();
   }
 
@@ -44,7 +44,7 @@
   {
     currentLine.type = "instruction"; 
     currentLine.instruction = currentInstruction; 
-    allLines.push_back(currentLine);
+    parsedLines.push_back(currentLine);
     resetValues();
   }
 
@@ -316,7 +316,7 @@ void printParsingStatus(int parseStatus)
 // Print parsed instructions and directives, with all of their data
 void printParsingData()
 {
-  for (const auto &line : allLines)
+  for (const auto &line : parsedLines)
   {
     std::cout << "label: " << line.label << std::endl
               << "type: " << line.type << std::endl;

@@ -1,22 +1,19 @@
-#include <iostream>
 #include <vector>
-#include "../misc/parser.hpp"
-#include "../inc/global.h"
+#include "../inc/assembler.hpp"
 
-extern FILE *yyin;
-extern std::vector<Line> allLines;
-extern void printParsingData();
-extern void printParsingStatus(int parseStatus);
+extern std::vector<Line> parsedLines;
 
-int main(int argc, char **argv)
+Assembler::Assembler(std::string outputFileName)
 {
-  FILE *fp;
-  std::string filename = argv[1];
-  fp = fopen(filename.c_str(), "r");
-  yyin = fp;
+  outputFile.open(outputFileName);
 
-  int parseStatus = yyparse();
-  printParsingStatus(parseStatus);
+  if (!outputFile.is_open()) {
+    std::cout << "Error opening file." << std::endl;
+    return;
+  }
 
-  return 0;
+}
+
+void Assembler::assemble()
+{
 }
