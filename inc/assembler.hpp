@@ -1,35 +1,13 @@
-#ifndef ASSEMBLER_H
-#define ASSEMBLER_H
+#ifndef _ASSEMBLER_HPP_
+#define _ASSEMBLER_HPP_
 
 #include <iostream>
-#include <vector>
 #include <fstream>
+#include <map>
+#include "symbol.hpp"
+#include "section.hpp"
+#include "../misc/parser_data.hpp"
 
-struct Argument {
-  std::string type;
-  std::string value;
-};
-
-struct Directive {
-  std::string mnemonic;
-  std::vector<Argument> argList;
-};
-
-struct Instruction {
-  std::string mnemonic;
-  std::string reg1;
-  std::string reg2;
-  std::string operand;
-  std::string operand_type;
-  std::string offset;
-};
-
-struct Line {
-  std::string type;
-  std::string label;
-  Directive directive;
-  Instruction instruction;
-};
 
 class Assembler
 {
@@ -40,6 +18,21 @@ public:
 
 private:
   std::ofstream outputFile;
+  std::map<std::string, Symbol> symbolTable;
+  std::map<std::string, Section> sectionTable;
+  std::string currentSection = "ABS";
+  unsigned locationCounter = 0;
+
+
+  void addLabelSymbol(std::string symbolName);
+  void addSectionSymbol(std::string symbolName);
+
+  void handleDirectiveFirstPass(Directive directive);
+  
+  void firstPass();
+  void secondPass();
+
+  void outputSymbolTable();
 };
 
 
