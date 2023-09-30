@@ -1,18 +1,26 @@
 %{
   #include "parser.hpp"
   #include <iostream>
+
+  char* stringNoQuotes(char* yytext)
+  {
+    std::string result = yytext;
+    result = result.substr(1, result.length() - 2);
+    return (char*) result.c_str();
+  }
 %}
 
 %option noyywrap
 
 %%
 
-.global                     { return GLOBAL;}
-.extern                     { return EXTERN;}
-.section                    { return SECTION;}
-.word                       { return WORD;}
-.skip                       { return SKIP;}
-.end                        { return END;}
+\.global                    { return GLOBAL; }
+\.extern                    { return EXTERN; }
+\.section                   { return SECTION;}
+\.word                      { return WORD; }
+\.skip                      { return SKIP; }
+\.end                       { return END;}
+\.ascii                     { return ASCII; }
 halt                        { return HALT; }
 int                         { return INT; }
 iret                        { return IRET; }
@@ -44,6 +52,7 @@ csrwr                       { return CSRWR; }
 [a-zA-Z_][a-zA-Z0-9_]*      { yylval.symbol = yytext; return SYMBOL; }
 0[xX][0-9a-fA-F]{1,8}       { yylval.symbol = yytext; return NUMBER; }
 [0-9]{1,10}                 { yylval.symbol = yytext; return NUMBER; }
+\"([^\"]*)\"                { yylval.symbol = stringNoQuotes(yytext); return STRING; }
 ,                           { return ','; }
 :                           { return ':'; }
 \%                          { return '%'; }

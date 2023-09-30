@@ -55,7 +55,7 @@
   char* symbol;
 }
 
-%token GLOBAL EXTERN SECTION WORD SKIP END
+%token GLOBAL EXTERN SECTION WORD SKIP END ASCII
 
 %token HALT INT IRET CALL RET JMP BEQ BNE BGT PUSH POP XCHG ADD
 %token SUB MUL DIV NOT AND OR XOR SHL SHR LD ST CSRRD CSRWR
@@ -65,6 +65,7 @@
 %token<symbol> GPR
 %token<symbol> CSR
 %token<symbol> NUMBER
+%token<symbol> STRING
 
 %%
 
@@ -91,6 +92,7 @@ directive:
 | word
 | skip
 | end
+| ascii
 ;
 
 global:
@@ -122,6 +124,9 @@ end:
   END       { currentDirective.mnemonic = "end"; }
 ;
 
+ascii:
+  ASCII STRING      { currentDirective.mnemonic = "ascii"; addArgument($2, "string");}
+;
 
 instr:
   halt

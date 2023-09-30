@@ -70,6 +70,10 @@ void Assembler::handleDirectiveFirstPass(Directive directive)
   {
     locationCounter += stoi(directive.argList[0].value);
   }
+  if (directive.mnemonic == "ascii")
+  {
+    locationCounter += directive.argList[0].value.length();
+  }
 }
 
 void Assembler::firstPass()
@@ -110,8 +114,8 @@ void Assembler::outputSymbolTable()
   outputFile << std::setw(10) << std::left << std::setfill(' ') << "Size";
   outputFile << std::setw(10) << std::left << std::setfill(' ') << "Type";
   outputFile << std::setw(10) << std::left << std::setfill(' ') << "Scope";
-  outputFile << std::setw(10) << std::left << std::setfill(' ') << "Section";
-  outputFile << std::setw(10) << std::left << std::setfill(' ') << "Name";
+  outputFile << std::setw(20) << std::left << std::setfill(' ') << "Section";
+  outputFile << std::setw(20) << std::left << std::setfill(' ') << "Name";
   outputFile << std::endl;
   for (const auto& symbol : symbolTable)
   {
@@ -119,8 +123,8 @@ void Assembler::outputSymbolTable()
     outputFile << std::setw(10) << std::left << std::setfill(' ') << symbol.second.size;
     outputFile << std::setw(10) << std::left << std::setfill(' ') << SymbolTypeToString(symbol.second.type);
     outputFile << std::setw(10) << std::left << std::setfill(' ') << ScopeTypeToString(symbol.second.scope);
-    outputFile << std::setw(10) << std::left << std::setfill(' ') << symbol.second.section;
-    outputFile << std::setw(10) << std::left << std::setfill(' ') << symbol.first;
+    outputFile << std::setw(20) << std::left << std::setfill(' ') << symbol.second.section;
+    outputFile << std::setw(20) << std::left << std::setfill(' ') << symbol.first;
     outputFile << std::endl;
   }
 }
