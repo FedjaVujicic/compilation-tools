@@ -9,29 +9,23 @@
 #include "../misc/parser_data.hpp"
 
 
-class Assembler
+namespace assembler
 {
-public:
-  Assembler(std::string outputFileName);
+  extern FILE* inputFile;
+  extern std::ofstream outputFile;
+  extern std::map<std::string, Symbol> symbolTable;
+  extern std::map<std::string, Section> sectionTable;
+  extern std::string currentSection;
+  extern unsigned locationCounter;
 
+  void setIOFiles(std::string inputFileName,std::string outputFileName);
   void assemble();
-
-private:
-  std::ofstream outputFile;
-  std::map<std::string, Symbol> symbolTable;
-  std::map<std::string, Section> sectionTable;
-  std::string currentSection = "ABS";
-  unsigned locationCounter = 0;
-
-
+  void handleLineFirstPass(Line line);
   void addLabelSymbol(std::string symbolName);
   void addSectionSymbol(std::string symbolName);
-
-  void handleDirectiveFirstPass(Directive directive);
-  
+  void handleDirectiveFirstPass(Directive directive);  
   void firstPass();
   void secondPass();
-
   void outputSymbolTable();
 };
 

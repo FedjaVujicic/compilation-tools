@@ -37,6 +37,7 @@
     currentLine.type = "directive";
     currentLine.directive = currentDirective;
     parsedLines.push_back(currentLine);
+    assembler::handleLineFirstPass(currentLine);
     resetValues();
   }
 
@@ -45,6 +46,7 @@
     currentLine.type = "instruction"; 
     currentLine.instruction = currentInstruction; 
     parsedLines.push_back(currentLine);
+    assembler::handleLineFirstPass(currentLine);
     resetValues();
   }
 
