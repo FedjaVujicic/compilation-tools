@@ -7,7 +7,9 @@
 
   int yylex();
   void yyerror(const char *s);
+  extern int yylineno;
 
+  int currentLineNumber = -1;
   Directive currentDirective;
   Instruction currentInstruction;
   std::vector<Line> parsedLines;
@@ -36,6 +38,7 @@
   {
     currentLine.type = "directive";
     currentLine.directive = currentDirective;
+    currentLine.number = currentLineNumber;
     parsedLines.push_back(currentLine);
     assembler::handleLineFirstPass(currentLine);
     resetValues();
@@ -45,6 +48,7 @@
   {
     currentLine.type = "instruction"; 
     currentLine.instruction = currentInstruction; 
+    currentLine.number = currentLineNumber;
     parsedLines.push_back(currentLine);
     assembler::handleLineFirstPass(currentLine);
     resetValues();
@@ -98,36 +102,36 @@ directive:
 ;
 
 global:
-  GLOBAL SYMBOL       { currentDirective.mnemonic = "global"; addArgument($2, "symbol"); }
+  GLOBAL SYMBOL       { currentDirective.mnemonic = "global"; addArgument($2, "symbol"); currentLineNumber = yylineno; }
 | global ',' SYMBOL   { currentDirective.mnemonic = "global"; addArgument($3, "symbol"); }
 ;
 
 extern:
-  EXTERN SYMBOL       { currentDirective.mnemonic = "extern"; addArgument($2, "symbol"); }
+  EXTERN SYMBOL       { currentDirective.mnemonic = "extern"; addArgument($2, "symbol"); currentLineNumber = yylineno; }
 | extern ',' SYMBOL   { currentDirective.mnemonic = "extern"; addArgument($3, "symbol"); }
 ;
 
 section:
-  SECTION SYMBOL       { currentDirective.mnemonic = "section"; addArgument($2, "symbol"); }
+  SECTION SYMBOL       { currentDirective.mnemonic = "section"; addArgument($2, "symbol"); currentLineNumber = yylineno; }
 ;
 
 word:
-  WORD NUMBER       { currentDirective.mnemonic = "word"; addArgument($2, "number"); }
-| WORD SYMBOL       { currentDirective.mnemonic = "word"; addArgument($2, "symbol"); }
+  WORD NUMBER       { currentDirective.mnemonic = "word"; addArgument($2, "number"); currentLineNumber = yylineno; }
+| WORD SYMBOL       { currentDirective.mnemonic = "word"; addArgument($2, "symbol"); currentLineNumber = yylineno; }
 | word ',' NUMBER   { currentDirective.mnemonic = "word"; addArgument($3, "number"); }
 | word ',' SYMBOL   { currentDirective.mnemonic = "word"; addArgument($3, "symbol"); }
 ;
 
 skip:
-  SKIP NUMBER       { currentDirective.mnemonic = "skip"; addArgument($2, "number"); }
+  SKIP NUMBER       { currentDirective.mnemonic = "skip"; addArgument($2, "number"); currentLineNumber = yylineno; }
 ;
 
 end:
-  END       { currentDirective.mnemonic = "end"; }
+  END       { currentDirective.mnemonic = "end"; currentLineNumber = yylineno; }
 ;
 
 ascii:
-  ASCII STRING      { currentDirective.mnemonic = "ascii"; addArgument($2, "string");}
+  ASCII STRING      { currentDirective.mnemonic = "ascii"; addArgument($2, "string"); currentLineNumber = yylineno; }
 ;
 
 instr:
@@ -160,104 +164,104 @@ instr:
 ;
 
 halt:
-  HALT  { currentInstruction.mnemonic = "halt"; }
+  HALT  { currentInstruction.mnemonic = "halt"; currentLineNumber = yylineno; }
 ;
 
 int:
-  INT  { currentInstruction.mnemonic = "int"; }
+  INT  { currentInstruction.mnemonic = "int"; currentLineNumber = yylineno; }
 ;
 
 iret:
-  IRET  { currentInstruction.mnemonic = "iret"; }
+  IRET  { currentInstruction.mnemonic = "iret"; currentLineNumber = yylineno; }
 ;
 
 call:
-  CALL operand  { currentInstruction.mnemonic = "call"; }
+  CALL operand  { currentInstruction.mnemonic = "call"; currentLineNumber = yylineno; }
 
 ret:
-  RET  { currentInstruction.mnemonic = "ret"; }
+  RET  { currentInstruction.mnemonic = "ret"; currentLineNumber = yylineno; }
 ;
 
 jmp:
-  JMP operand  { currentInstruction.mnemonic = "jmp"; }
+  JMP operand  { currentInstruction.mnemonic = "jmp"; currentLineNumber = yylineno; }
 ;
 
 beq:
-  BEQ instr_gpr1 ',' instr_gpr2 ',' operand { currentInstruction.mnemonic = "beq"; }
+  BEQ instr_gpr1 ',' instr_gpr2 ',' operand { currentInstruction.mnemonic = "beq"; currentLineNumber = yylineno; }
 ;
 bne:
-  BNE instr_gpr1 ',' instr_gpr2 ',' operand { currentInstruction.mnemonic = "bne"; }
+  BNE instr_gpr1 ',' instr_gpr2 ',' operand { currentInstruction.mnemonic = "bne"; currentLineNumber = yylineno; }
 ;
 bgt:
-  BGT instr_gpr1 ',' instr_gpr2 ',' operand { currentInstruction.mnemonic = "bgt"; }
+  BGT instr_gpr1 ',' instr_gpr2 ',' operand { currentInstruction.mnemonic = "bgt"; currentLineNumber = yylineno; }
 ;
 
 push:
-  PUSH instr_gpr1  { currentInstruction.mnemonic = "push"; }
+  PUSH instr_gpr1  { currentInstruction.mnemonic = "push"; currentLineNumber = yylineno; }
 ;
 
 pop:
-  POP instr_gpr1  { currentInstruction.mnemonic = "pop"; }
+  POP instr_gpr1  { currentInstruction.mnemonic = "pop"; currentLineNumber = yylineno; }
 ;
 
 xchg:
-  XCHG instr_gpr1 ',' instr_gpr2  { currentInstruction.mnemonic = "xchg"; }
+  XCHG instr_gpr1 ',' instr_gpr2  { currentInstruction.mnemonic = "xchg"; currentLineNumber = yylineno; }
 ;
 
 add:
-  ADD instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "add"; }
+  ADD instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "add"; currentLineNumber = yylineno; }
 ;
 
 sub:
-  SUB instr_gpr1 ',' instr_gpr2  { currentInstruction.mnemonic = "sub"; }
+  SUB instr_gpr1 ',' instr_gpr2  { currentInstruction.mnemonic = "sub"; currentLineNumber = yylineno; }
 ;
 
 mul:
-  MUL instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "mul"; }
+  MUL instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "mul"; currentLineNumber = yylineno; }
 ;
 
 div:
-  DIV instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "div"; }
+  DIV instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "div"; currentLineNumber = yylineno; }
 ;
 
 not:
-  NOT instr_gpr1  { currentInstruction.mnemonic = "not"; }
+  NOT instr_gpr1  { currentInstruction.mnemonic = "not"; currentLineNumber = yylineno; }
 ;
 
 and:
-  AND instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "and"; }
+  AND instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "and"; currentLineNumber = yylineno; }
 ;
 
 or:
-  OR instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "or"; }
+  OR instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "or"; currentLineNumber = yylineno; }
 ;
 
 xor:
-  XOR instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "xor"; }
+  XOR instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "xor"; currentLineNumber = yylineno; }
 ;
 
 shl:
-  SHL instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "shl"; }
+  SHL instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "shl"; currentLineNumber = yylineno; }
 ;
 
 shr:
-  SHR instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "shr"; }
+  SHR instr_gpr1 ',' instr_gpr2   { currentInstruction.mnemonic = "shr"; currentLineNumber = yylineno; }
 ;
 
 ld:
-  LD operand ',' instr_gpr1  { currentInstruction.mnemonic = "ld"; }
+  LD operand ',' instr_gpr1  { currentInstruction.mnemonic = "ld"; currentLineNumber = yylineno; }
 ;
 
 st:
-  ST instr_gpr1 ',' operand { currentInstruction.mnemonic = "st"; }
+  ST instr_gpr1 ',' operand { currentInstruction.mnemonic = "st"; currentLineNumber = yylineno; }
 ;
 
 csrrd:
-  CSRRD instr_csr1 ',' instr_gpr2  { currentInstruction.mnemonic = "csrrd"; }
+  CSRRD instr_csr1 ',' instr_gpr2  { currentInstruction.mnemonic = "csrrd"; currentLineNumber = yylineno; }
 ;
 
 csrwr:
-  CSRWR instr_gpr1 ',' instr_csr2 { currentInstruction.mnemonic = "csrwr"; }
+  CSRWR instr_gpr1 ',' instr_csr2 { currentInstruction.mnemonic = "csrwr"; currentLineNumber = yylineno; }
 ;
 
 
@@ -325,7 +329,8 @@ void printParsingData()
 {
   for (const auto &line : parsedLines)
   {
-    std::cout << "label: " << line.label << std::endl
+    std::cout << "line number: " << line.number << std::endl
+              << "label: " << line.label << std::endl
               << "type: " << line.type << std::endl;
 
     if (line.type == "instruction")

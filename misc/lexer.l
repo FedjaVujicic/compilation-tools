@@ -11,6 +11,7 @@
 %}
 
 %option noyywrap
+%option yylineno
 
 %%
 
@@ -60,8 +61,8 @@ csrwr                       { return CSRWR; }
 \[                          { return '['; }
 \]                          { return ']'; }
 \+                          { return '+'; }
-[ \r\t\n]
 #.*\n
+[ \r\t\n]
 .                           { std::cout << "LEXING ERROR" << std::endl; }
 
 %%

@@ -17,6 +17,11 @@ namespace assembler
   std::string currentSection = "ABS";
   unsigned locationCounter = 0;
 
+  bool isContentOutOfSection()
+  {
+    return true;
+  }
+
   void setIOFiles(std::string inputFileName, std::string outputFileName)
   {
     inputFile = fopen(inputFileName.c_str(), "r");
@@ -88,7 +93,7 @@ namespace assembler
       locationCounter += directive.argList[0].value.length();
     }
   }
-  
+
   void handleLineFirstPass(Line line)
   {
     if (line.label != "")

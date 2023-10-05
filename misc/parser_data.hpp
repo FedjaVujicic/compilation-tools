@@ -28,6 +28,7 @@ struct Instruction
 
 struct Line
 {
+  unsigned number;
   std::string type; //
   std::string label;
   Directive directive;
