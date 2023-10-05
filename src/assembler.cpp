@@ -10,7 +10,7 @@ extern void printParsingData();
 
 namespace assembler
 {
-  FILE* inputFile;
+  FILE *inputFile;
   std::ofstream outputFile;
   std::map<std::string, Symbol> symbolTable;
   std::map<std::string, Section> sectionTable;
@@ -44,22 +44,6 @@ namespace assembler
   void addSectionSymbol(std::string symbolName)
   {
     symbolTable[symbolName] = {0, 0, SymbolType::SECTION, ScopeType::LOCAL, symbolName};
-  }
-
-  void handleLineFirstPass(Line line)
-  {
-    if (line.label != "")
-    {
-      addLabelSymbol(line.label);
-    }
-    if (line.type == "directive")
-    {
-      handleDirectiveFirstPass(line.directive);
-    }
-    if (line.type == "instruction")
-    {
-      locationCounter += 4;
-    }
   }
 
   void handleDirectiveFirstPass(Directive directive)
@@ -104,24 +88,21 @@ namespace assembler
       locationCounter += directive.argList[0].value.length();
     }
   }
-
-  void firstPass()
+  
+  void handleLineFirstPass(Line line)
   {
-    yyin = inputFile;
-    int parseStatus = yyparse();
-    printParsingStatus(parseStatus);
-    locationCounter = 0;
-  }
-
-  void secondPass()
-  {
-    outputSymbolTable();
-  }
-
-  void assemble()
-  {
-    firstPass();
-    secondPass();
+    if (line.label != "")
+    {
+      addLabelSymbol(line.label);
+    }
+    if (line.type == "directive")
+    {
+      handleDirectiveFirstPass(line.directive);
+    }
+    if (line.type == "instruction")
+    {
+      locationCounter += 4;
+    }
   }
 
   void outputSymbolTable()
@@ -145,4 +126,25 @@ namespace assembler
       outputFile << std::endl;
     }
   }
+
+  void firstPass()
+  {
+    yyin = inputFile;
+    int parseStatus = yyparse();
+    printParsingStatus(parseStatus);
+    locationCounter = 0;
+    currentSection = "ABS";
+  }
+
+  void secondPass()
+  {
+    outputSymbolTable();
+  }
+
+  void assemble()
+  {
+    firstPass();
+    secondPass();
+  }
+
 }
