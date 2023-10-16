@@ -67,6 +67,64 @@ namespace assembler
     symbolTable[symbolName] = {0, 0, SymbolType::SECTION, ScopeType::LOCAL, symbolName};
   }
 
+  void outputByte(int byteHigh, int byteLow)
+  {
+    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byteHigh;
+    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byteLow;
+    locationCounter += 1;
+    if (!(locationCounter % 4))
+    {
+      outputFile << std::endl;
+    }
+  }
+
+  void outputWord(int byte4High, int byte4Low, int byte3High, int byte3Low, int byte2High, int byte2Low, int byte1High, int byte1Low)
+  {
+    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte1High;
+    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte1Low;
+    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte2High;
+    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte2Low;
+    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte3High;
+    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte3Low;
+    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte4High;
+    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte4Low;
+    outputFile << std::endl;
+    locationCounter += 4;
+  }
+
+  void outputInteger(int value)
+  {
+    int byte4High = (value & 0xF0000000) >> 28;
+    int byte4Low = (value & 0x0F000000) >> 24;
+    int byte3High = (value & 0x00F00000) >> 20;
+    int byte3Low = (value & 0x000F0000) >> 16;
+    int byte2High = (value & 0x0000F000) >> 12;
+    int byte2Low = (value & 0x00000F00) >> 8;
+    int byte1High = (value & 0x000000F0) >> 4;
+    int byte1Low = (value & 0x0000000F);
+    outputWord(byte4High, byte4Low, byte3High, byte3Low,
+               byte2High, byte2Low, byte1High, byte1Low);
+  }
+
+  void outputString(std::string value)
+  {
+    std::vector<int> bytes;
+    for (const auto& c : value)
+    {
+      bytes.push_back(c);
+    }
+    for (int i = bytes.size() - 1; i >= 0; --i)
+    {
+      int byteHigh = (bytes[i] & 0x000000F0) >> 4;
+      int byteLow = (bytes[i] & 0x0000000F);
+      outputByte(byteHigh, byteLow);
+    }
+    while (locationCounter % 4)
+    {
+      outputByte(0, 0);
+    }
+  }
+
   void handleDirectiveFirstPass(Directive directive)
   {
     if (directive.mnemonic == "extern")
@@ -102,21 +160,21 @@ namespace assembler
     }
     if (directive.mnemonic == "skip")
     {
-      int value = stoi(directive.argList[0].value);
-      while (value % 4)
+      int size = stoi(directive.argList[0].value);
+      while (size % 4)
       {
-        ++value;
+        ++size;
       }
-      locationCounter += value;
+      locationCounter += size;
     }
     if (directive.mnemonic == "ascii")
     {
-      int value = directive.argList[0].value.length();
-      while (value % 4)
+      int size = directive.argList[0].value.length();
+      while (size % 4)
       {
-        ++value;
+        ++size;
       }
-      locationCounter += value;
+      locationCounter += size;
     }
   }
 
@@ -136,8 +194,52 @@ namespace assembler
     }
   }
 
+  int stringToInt(std::string value)
+  {
+    if (value.length() > 2)
+    {
+      if (value[0] == '0' && value[1] == 'x')
+      {
+        return std::stoul(value, nullptr, 16);
+      }
+    }
+    return stoi(value);
+  }
+
   void handleDirectiveSecondPass(Directive directive)
   {
+    if (directive.mnemonic == "word")
+    {
+      for (const auto &arg : directive.argList)
+      {
+        if (arg.type == "symbol")
+        {
+          // ??
+          continue;
+        }
+        if (arg.type == "number")
+        {
+          int value = stringToInt(arg.value);
+          outputInteger(value);
+        }
+      }
+    }
+    if (directive.mnemonic == "skip")
+    {
+      int size = stoi(directive.argList[0].value);
+      while (size % 4)
+      {
+        ++size;
+      }
+      for (int i = 0; i < size; ++i)
+      {
+        outputByte(0, 0);
+      }
+    }
+    if (directive.mnemonic == "ascii")
+    {
+      outputString(directive.argList[0].value);
+    }
   }
 
   int getGprIndex(std::string regCode)
@@ -153,119 +255,105 @@ namespace assembler
     return stoi(regCode.substr(2, std::string::npos));
   }
 
-  void outputInstruction(int byte4High, int byte4Low, int byte3High, int byte3Low, int byte2High, int byte2Low, int byte1High, int byte1Low)
-  {
-    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte1High;
-    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte1Low;
-    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte2High;
-    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte2Low;
-    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte3High;
-    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte3Low;
-    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte4High;
-    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte4Low;
-    outputFile << std::endl;
-  }
-
   void handleInstructionSecondPass(Instruction instruction)
   {
     if (instruction.mnemonic == "halt")
     {
-      outputInstruction(0, 0, 0, 0, 0, 0, 0, 0);
+      outputWord(0, 0, 0, 0, 0, 0, 0, 0);
     }
     if (instruction.mnemonic == "int")
     {
-      outputInstruction(0, 0, 0, 0, 0, 0, 1, 0);
+      outputWord(0, 0, 0, 0, 0, 0, 1, 0);
     }
-    //iret - 3
-    //call - 1
-    //ret - 3
-    //jmp - 1
-    //beq - 1
-    //bne - 1
-    //bgt - 1
-    //push - 2
-    //pop - 2
+    // iret - 3
+    // call - 1
+    // ret - 3
+    // jmp - 1
+    // beq - 1
+    // bne - 1
+    // bgt - 1
+    // push - 2
+    // pop - 2
     if (instruction.mnemonic == "xchg")
     {
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(4, 0, 0, regB, regC, 0, 0, 0);
+      outputWord(4, 0, 0, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "add")
     {
       int regA = getGprIndex(instruction.reg2);
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(5, 0, regA, regB, regC, 0, 0, 0);
+      outputWord(5, 0, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "sub")
     {
       int regA = getGprIndex(instruction.reg2);
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(5, 1, regA, regB, regC, 0, 0, 0);
+      outputWord(5, 1, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "mul")
     {
       int regA = getGprIndex(instruction.reg2);
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(5, 2, regA, regB, regC, 0, 0, 0);
+      outputWord(5, 2, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "div")
     {
       int regA = getGprIndex(instruction.reg2);
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(5, 3, regA, regB, regC, 0, 0, 0);
+      outputWord(5, 3, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "not")
     {
       int regA = getGprIndex(instruction.reg1);
       int regB = getGprIndex(instruction.reg1);
       int regC = 0;
-      outputInstruction(6, 0, regA, regB, regC, 0, 0, 0);
+      outputWord(6, 0, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "and")
     {
       int regA = getGprIndex(instruction.reg2);
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(6, 1, regA, regB, regC, 0, 0, 0);
+      outputWord(6, 1, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "or")
     {
       int regA = getGprIndex(instruction.reg2);
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(6, 2, regA, regB, regC, 0, 0, 0);
+      outputWord(6, 2, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "xor")
     {
       int regA = getGprIndex(instruction.reg2);
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(6, 3, regA, regB, regC, 0, 0, 0);
+      outputWord(6, 3, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "shl")
     {
       int regA = getGprIndex(instruction.reg2);
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(7, 0, regA, regB, regC, 0, 0, 0);
+      outputWord(7, 0, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "shr")
     {
       int regA = getGprIndex(instruction.reg2);
       int regB = getGprIndex(instruction.reg1);
       int regC = getGprIndex(instruction.reg2);
-      outputInstruction(7, 1, regA, regB, regC, 0, 0, 0);
+      outputWord(7, 1, regA, regB, regC, 0, 0, 0);
     }
-    //ld - 2
-    //st - 2
-    //csrrd - 2
-    //csrwr - 2
-    locationCounter += 4;
+    // ld - 2
+    // st - 2
+    // csrrd - 2
+    // csrwr - 2
   }
 
   void outputSymbolTable()
@@ -295,7 +383,6 @@ namespace assembler
     yyin = inputFile;
     int parseStatus = yyparse();
     printParsingStatus(parseStatus);
-    std::cout << locationCounter << std::endl;
     locationCounter = 0;
     currentSection = "ABS";
   }
@@ -327,6 +414,7 @@ namespace assembler
         handleInstructionSecondPass(line.instruction);
       }
     }
+    locationCounter = 0;
   }
 
   void assemble()
