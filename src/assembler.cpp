@@ -17,8 +17,24 @@ namespace assembler
   std::string currentSection = "ABS";
   unsigned locationCounter = 0;
 
-  bool isContentOutOfSection()
+  bool isContentOutOfSection(Line line)
   {
+    if (currentSection != "ABS")
+    {
+      return false;
+    }
+    if (line.label != "")
+    {
+      return true;
+    }
+    if (line.type == "directive")
+    {
+      if (line.directive.mnemonic != "word" && line.directive.mnemonic != "skip" && line.directive.mnemonic != "ascii")
+      {
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -110,6 +126,138 @@ namespace assembler
     }
   }
 
+  void handleDirectiveSecondPass(Directive directive)
+  {
+  }
+
+  int getGprIndex(std::string regCode)
+  {
+    if (regCode == "%sp")
+    {
+      return 14;
+    }
+    if (regCode == "%pc")
+    {
+      return 15;
+    }
+    return stoi(regCode.substr(2, std::string::npos));
+  }
+
+  void outputInstruction(int byte4High, int byte4Low, int byte3High, int byte3Low, int byte2High, int byte2Low, int byte1High, int byte1Low)
+  {
+    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte1High;
+    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte1Low;
+    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte2High;
+    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte2Low;
+    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte3High;
+    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte3Low;
+    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte4High;
+    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte4Low;
+    outputFile << std::endl;
+  }
+
+  void handleInstructionSecondPass(Instruction instruction)
+  {
+    if (instruction.mnemonic == "halt")
+    {
+      outputInstruction(0, 0, 0, 0, 0, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "int")
+    {
+      outputInstruction(0, 0, 0, 0, 0, 0, 1, 0);
+    }
+    //iret - 3
+    //call - 1
+    //ret - 3
+    //jmp - 1
+    //beq - 1
+    //bne - 1
+    //bgt - 1
+    //push - 2
+    //pop - 2
+    if (instruction.mnemonic == "xchg")
+    {
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(4, 0, 0, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "add")
+    {
+      int regA = getGprIndex(instruction.reg2);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(5, 0, regA, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "sub")
+    {
+      int regA = getGprIndex(instruction.reg2);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(5, 1, regA, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "mul")
+    {
+      int regA = getGprIndex(instruction.reg2);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(5, 2, regA, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "div")
+    {
+      int regA = getGprIndex(instruction.reg2);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(5, 3, regA, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "not")
+    {
+      int regA = getGprIndex(instruction.reg1);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = 0;
+      outputInstruction(6, 0, regA, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "and")
+    {
+      int regA = getGprIndex(instruction.reg2);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(6, 1, regA, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "or")
+    {
+      int regA = getGprIndex(instruction.reg2);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(6, 2, regA, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "xor")
+    {
+      int regA = getGprIndex(instruction.reg2);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(6, 3, regA, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "shl")
+    {
+      int regA = getGprIndex(instruction.reg2);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(7, 0, regA, regB, regC, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "shr")
+    {
+      int regA = getGprIndex(instruction.reg2);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputInstruction(7, 1, regA, regB, regC, 0, 0, 0);
+    }
+    //ld - 2
+    //st - 2
+    //csrrd - 2
+    //csrwr - 2
+    locationCounter += 4;
+  }
+
   void outputSymbolTable()
   {
     outputFile << "#.symtab" << std::endl;
@@ -144,6 +292,30 @@ namespace assembler
   void secondPass()
   {
     outputSymbolTable();
+    for (const auto &line : parsedLines)
+    {
+      if (line.type == "directive")
+      {
+        if (line.directive.mnemonic == "section")
+        {
+          currentSection = line.directive.argList[0].value;
+          outputFile << "#." << currentSection << std::endl;
+        }
+      }
+      if (isContentOutOfSection(line))
+      {
+        std::cout << "Line " << line.number << ": Error. Content defined outside of section." << std::endl;
+        exit(1);
+      }
+      if (line.type == "directive")
+      {
+        handleDirectiveSecondPass(line.directive);
+      }
+      else if (line.type == "instruction")
+      {
+        handleInstructionSecondPass(line.instruction);
+      }
+    }
   }
 
   void assemble()
