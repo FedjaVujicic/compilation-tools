@@ -102,11 +102,21 @@ namespace assembler
     }
     if (directive.mnemonic == "skip")
     {
-      locationCounter += stoi(directive.argList[0].value);
+      int value = stoi(directive.argList[0].value);
+      while (value % 4)
+      {
+        ++value;
+      }
+      locationCounter += value;
     }
     if (directive.mnemonic == "ascii")
     {
-      locationCounter += directive.argList[0].value.length();
+      int value = directive.argList[0].value.length();
+      while (value % 4)
+      {
+        ++value;
+      }
+      locationCounter += value;
     }
   }
 
@@ -285,6 +295,7 @@ namespace assembler
     yyin = inputFile;
     int parseStatus = yyparse();
     printParsingStatus(parseStatus);
+    std::cout << locationCounter << std::endl;
     locationCounter = 0;
     currentSection = "ABS";
   }
