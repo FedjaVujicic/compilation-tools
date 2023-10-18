@@ -69,6 +69,10 @@ namespace assembler
 
   void outputByte(int byteHigh, int byteLow)
   {
+    if (!(locationCounter % 4))
+    {
+      outputFile << std::dec << locationCounter << ": ";
+    }
     outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byteHigh;
     outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byteLow;
     locationCounter += 1;
@@ -80,16 +84,10 @@ namespace assembler
 
   void outputWord(int byte4High, int byte4Low, int byte3High, int byte3Low, int byte2High, int byte2Low, int byte1High, int byte1Low)
   {
-    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte1High;
-    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte1Low;
-    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte2High;
-    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte2Low;
-    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte3High;
-    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte3Low;
-    outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byte4High;
-    outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byte4Low;
-    outputFile << std::endl;
-    locationCounter += 4;
+    outputByte(byte1High, byte1Low);
+    outputByte(byte2High, byte2Low);
+    outputByte(byte3High, byte3Low);
+    outputByte(byte4High, byte4Low);
   }
 
   void outputInteger(int value)
@@ -113,15 +111,11 @@ namespace assembler
     {
       bytes.push_back(c);
     }
-    for (int i = bytes.size() - 1; i >= 0; --i)
+    for (const auto& byte : bytes)
     {
-      int byteHigh = (bytes[i] & 0x000000F0) >> 4;
-      int byteLow = (bytes[i] & 0x0000000F);
+      int byteHigh = (byte & 0x000000F0) >> 4;
+      int byteLow = (byte & 0x0000000F);
       outputByte(byteHigh, byteLow);
-    }
-    while (locationCounter % 4)
-    {
-      outputByte(0, 0);
     }
   }
 
@@ -159,22 +153,12 @@ namespace assembler
       locationCounter += directive.argList.size() * 4;
     }
     if (directive.mnemonic == "skip")
-    {
-      int size = stoi(directive.argList[0].value);
-      while (size % 4)
-      {
-        ++size;
-      }
-      locationCounter += size;
+    {      
+      locationCounter += stoi(directive.argList[0].value);
     }
     if (directive.mnemonic == "ascii")
     {
-      int size = directive.argList[0].value.length();
-      while (size % 4)
-      {
-        ++size;
-      }
-      locationCounter += size;
+      locationCounter += directive.argList[0].value.length();
     }
   }
 
@@ -227,10 +211,6 @@ namespace assembler
     if (directive.mnemonic == "skip")
     {
       int size = stoi(directive.argList[0].value);
-      while (size % 4)
-      {
-        ++size;
-      }
       for (int i = 0; i < size; ++i)
       {
         outputByte(0, 0);

@@ -4,6 +4,6 @@ add %r1, %r2
 .skip 1
 .skip 4
 .skip 8
-.ascii "abcde"
+.ascii "abcde\n"
 a:
 add %r1, %r2
