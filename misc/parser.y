@@ -176,24 +176,24 @@ iret:
 ;
 
 call:
-  CALL operand  { currentInstruction.mnemonic = "call"; currentLineNumber = yylineno; }
+  CALL operand_jump  { currentInstruction.mnemonic = "call"; currentLineNumber = yylineno; }
 
 ret:
   RET  { currentInstruction.mnemonic = "ret"; currentLineNumber = yylineno; }
 ;
 
 jmp:
-  JMP operand  { currentInstruction.mnemonic = "jmp"; currentLineNumber = yylineno; }
+  JMP operand_jump  { currentInstruction.mnemonic = "jmp"; currentLineNumber = yylineno; }
 ;
 
 beq:
-  BEQ instr_gpr1 ',' instr_gpr2 ',' operand { currentInstruction.mnemonic = "beq"; currentLineNumber = yylineno; }
+  BEQ instr_gpr1 ',' instr_gpr2 ',' operand_jump { currentInstruction.mnemonic = "beq"; currentLineNumber = yylineno; }
 ;
 bne:
-  BNE instr_gpr1 ',' instr_gpr2 ',' operand { currentInstruction.mnemonic = "bne"; currentLineNumber = yylineno; }
+  BNE instr_gpr1 ',' instr_gpr2 ',' operand_jump { currentInstruction.mnemonic = "bne"; currentLineNumber = yylineno; }
 ;
 bgt:
-  BGT instr_gpr1 ',' instr_gpr2 ',' operand { currentInstruction.mnemonic = "bgt"; currentLineNumber = yylineno; }
+  BGT instr_gpr1 ',' instr_gpr2 ',' operand_jump { currentInstruction.mnemonic = "bgt"; currentLineNumber = yylineno; }
 ;
 
 push:
@@ -249,11 +249,11 @@ shr:
 ;
 
 ld:
-  LD operand ',' instr_gpr1  { currentInstruction.mnemonic = "ld"; currentLineNumber = yylineno; }
+  LD operand_data ',' instr_gpr1  { currentInstruction.mnemonic = "ld"; currentLineNumber = yylineno; }
 ;
 
 st:
-  ST instr_gpr1 ',' operand { currentInstruction.mnemonic = "st"; currentLineNumber = yylineno; }
+  ST instr_gpr1 ',' operand_data { currentInstruction.mnemonic = "st"; currentLineNumber = yylineno; }
 ;
 
 csrrd:
@@ -286,7 +286,7 @@ operand_reg:
   GPR         { currentInstruction.operand = $1; }
 ;
 
-operand:
+operand_data:
   '$' SYMBOL          { currentInstruction.operand = $2; currentInstruction.operand_type = "sym"; }
 | '$' NUMBER          { currentInstruction.operand = $2; currentInstruction.operand_type = "num"; }
 | SYMBOL              { currentInstruction.operand = $1; currentInstruction.operand_type = "mem[sym]"; }
@@ -295,6 +295,10 @@ operand:
 | '[' operand_reg ']' { currentInstruction.operand_type = "mem[reg]"; }
 | '[' operand_reg '+' offset ']'
 ;
+
+operand_jump:
+ SYMBOL               { currentInstruction.operand = $1; currentInstruction.operand_type = "sym"; }
+| NUMBER              { currentInstruction.operand = $1; currentInstruction.operand_type = "num"; }
 
 offset:
   NUMBER      { currentInstruction.offset = $1; currentInstruction.operand_type = "mem[reg+num]"; }

@@ -69,14 +69,14 @@ namespace assembler
 
   void outputByte(int byteHigh, int byteLow)
   {
-    if (!(locationCounter % 4))
+    if (!(locationCounter % 8))
     {
-      outputFile << std::dec << locationCounter << ": ";
+      outputFile << std::dec << std::setw(4) << std::right << std::setfill('0') << locationCounter << ": ";
     }
     outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byteHigh;
     outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byteLow;
     locationCounter += 1;
-    if (!(locationCounter % 4))
+    if (!(locationCounter % 8))
     {
       outputFile << std::endl;
     }
@@ -245,15 +245,18 @@ namespace assembler
     {
       outputWord(0, 0, 0, 0, 0, 0, 1, 0);
     }
-    // iret - 3
-    // call - 1
-    // ret - 3
-    // jmp - 1
-    // beq - 1
-    // bne - 1
-    // bgt - 1
-    // push - 2
-    // pop - 2
+    // iret
+    // call
+    // ret
+    if (instruction.mnemonic == "jmp")
+    {
+      
+    }
+    // beq
+    // bne
+    // bgt
+    // push
+    // pop
     if (instruction.mnemonic == "xchg")
     {
       int regB = getGprIndex(instruction.reg1);
@@ -330,10 +333,10 @@ namespace assembler
       int regC = getGprIndex(instruction.reg2);
       outputWord(7, 1, regA, regB, regC, 0, 0, 0);
     }
-    // ld - 2
-    // st - 2
-    // csrrd - 2
-    // csrwr - 2
+    // ld
+    // st
+    // csrrd
+    // csrwr
   }
 
   void outputSymbolTable()

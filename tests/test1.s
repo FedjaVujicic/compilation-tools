@@ -1,12 +1,11 @@
 .section code
-xchg %r1, %r2
-add %r1, %r2
-sub %r1, %r2
-mul %r1, %r2
-div %r1, %r2
-not %r1
-and %r1, %r2
-or %r1, %r2
-xor %r1, %r2
-shl %r1, %r2
-shr %r1, %r2
+call 0x12345
+call asdf
+jmp 0x12345
+jmp asdf
+beq %r1, %r2, 0x12345
+beq %r1, %r2, asdf
+bne %r1, %r2, 0x12345
+bne %r1, %r2, asdf
+bgt %r1, %r2, 0x12345
+bgt %r1, %r2, asdf
