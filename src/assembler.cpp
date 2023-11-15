@@ -1,5 +1,6 @@
 #include <vector>
 #include <iomanip>
+#include <unordered_map>
 #include "../inc/assembler.hpp"
 #include "../misc/parser.hpp"
 
@@ -13,10 +14,10 @@ namespace assembler
 {
   FILE *inputFile;
   std::ofstream outputFile;
-  std::map<std::string, Symbol> symbolTable;
-  std::map<std::string, Section> sectionTable;
-  std::map<int, int> literalTable;
-  std::map<std::string, int> literalSymTable;
+  std::unordered_map<std::string, Symbol> symbolTable;
+  std::unordered_map<std::string, Section> sectionTable;
+  std::unordered_map<int, int> literalTable;
+  std::unordered_map<std::string, int> literalSymTable;
   std::string currentSection = "ABS";
   unsigned locationCounter = 0;
 
@@ -78,6 +79,15 @@ namespace assembler
       exit(1);
     }
     symbolTable[symbolName] = {0, 0, SymbolType::SECTION, ScopeType::LOCAL, symbolName};
+  }
+
+  void addInstructionSymbol(std::string symbolName)
+  {
+    if (symbolTable.count(symbolName) > 0)
+    {
+      return;
+    }
+    symbolTable[symbolName] = {0, 0, SymbolType::NOTYPE, ScopeType::GLOBAL, "UND"};
   }
 
   void outputByte(int byteHigh, int byteLow)
@@ -173,6 +183,17 @@ namespace assembler
     }
     if (directive.mnemonic == "word")
     {
+      for (const auto &arg : directive.argList)
+      {
+        if (arg.type == "symbol")
+        {
+          if (symbolTable.count(arg.value) > 0)
+          {
+            continue;
+          }
+          symbolTable[arg.value] = {0, 0, SymbolType::NOTYPE, ScopeType::GLOBAL, "UND"};
+        }
+      }
       locationCounter += directive.argList.size() * 4;
     }
     if (directive.mnemonic == "skip")
@@ -191,12 +212,20 @@ namespace assembler
     if (instruction.mnemonic == "call" || instruction.mnemonic == "jmp" || instruction.mnemonic == "beq" ||
         instruction.mnemonic == "bne" || instruction.mnemonic == "bgt")
     {
+      if (instruction.operand_type == "num")
+      {
+        // bazen literala
+      }
       if (instruction.operand_type == "sym")
       {
-        
+        addInstructionSymbol(instruction.operand);
+        // bazen literala
       }
     }
-    if (instruction.mnemonic == "ld" || instruction.mnemonic == "st")
+    if (instruction.mnemonic == "st")
+    {
+    }
+    if (instruction.mnemonic == "ld")
     {
     }
   }

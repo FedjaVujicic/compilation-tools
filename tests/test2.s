@@ -12,7 +12,12 @@ iret
 halt
 halt
 d: halt
+jmp asdf
+
+.word asdf, qwer, zxcv
 
 
 
 
+asdf:halt
+zxcv:halt
