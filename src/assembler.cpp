@@ -198,7 +198,8 @@ namespace assembler
       {
         if (arg.type == "symbol")
         {
-          // ??
+          // output 0000 0000
+          // add relocation
           continue;
         }
         if (arg.type == "number")
@@ -235,6 +236,24 @@ namespace assembler
     return stoi(regCode.substr(2, std::string::npos));
   }
 
+  int getCsrIndex(std::string regCode)
+  {
+    if (regCode == "%status")
+    {
+      return 0;
+    }
+    if (regCode == "%handler")
+    {
+      return 1;
+    }
+    if (regCode == "%cause")
+    {
+      return 2;
+    }
+    std::cout << "Invalid CSR index" << std::endl;
+    exit(1);
+  }
+
   void handleInstructionSecondPass(Instruction instruction)
   {
     if (instruction.mnemonic == "halt")
@@ -243,20 +262,32 @@ namespace assembler
     }
     if (instruction.mnemonic == "int")
     {
-      outputWord(0, 0, 0, 0, 0, 0, 1, 0);
+      outputWord(1, 0, 0, 0, 0, 0, 0, 0);
     }
-    // iret
-    // call
-    // ret
-    if (instruction.mnemonic == "jmp")
+    if (instruction.mnemonic == "iret")
     {
-      
+      outputWord(9, 3, 15, 14, 0, 0, 0, 4);
+      outputWord(9, 7, 0, 14, 0, 0, 0, 4);      
     }
+    // call
+    if (instruction.mnemonic == "ret")
+    {
+      outputWord(9, 3, 15, 14, 0, 0, 0, 4);
+    }
+    // jmp
     // beq
     // bne
     // bgt
-    // push
-    // pop
+    if (instruction.mnemonic == "push")
+    {
+      int regC = getGprIndex(instruction.reg1);     
+      outputWord(8, 1, 14, 0, regC, 0, 0, 4); 
+    }
+    if (instruction.mnemonic == "pop")
+    {
+      int regA = getGprIndex(instruction.reg1);     
+      outputWord(9, 3, regA, 14, 0, 0, 0, 4); 
+    }
     if (instruction.mnemonic == "xchg")
     {
       int regB = getGprIndex(instruction.reg1);
@@ -335,8 +366,18 @@ namespace assembler
     }
     // ld
     // st
-    // csrrd
-    // csrwr
+    if (instruction.mnemonic == "csrrd")
+    {
+      int regA = getCsrIndex(instruction.reg1);
+      int regB = getGprIndex(instruction.reg2);
+      outputWord(9, 4, regA, regB, 0, 0, 0, 0);
+    }
+    if (instruction.mnemonic == "csrwr")
+    {
+      int regA = getGprIndex(instruction.reg1);
+      int regB = getCsrIndex(instruction.reg2);
+      outputWord(9, 0, regA, regB, 0, 0, 0, 0);      
+    }
   }
 
   void outputSymbolTable()
