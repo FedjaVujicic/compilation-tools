@@ -5,6 +5,7 @@
 
 extern std::vector<Line> parsedLines;
 extern FILE *yyin;
+extern int yylineno;
 extern void printParsingStatus(int parseStatus);
 extern void printParsingData();
 
@@ -14,6 +15,8 @@ namespace assembler
   std::ofstream outputFile;
   std::map<std::string, Symbol> symbolTable;
   std::map<std::string, Section> sectionTable;
+  std::map<int, int> literalTable;
+  std::map<std::string, int> literalSymTable;
   std::string currentSection = "ABS";
   unsigned locationCounter = 0;
 
@@ -52,10 +55,15 @@ namespace assembler
 
   void addLabelSymbol(std::string symbolName)
   {
+    if (symbolTable.count(symbolName) > 0 && symbolTable[symbolName].section != "UND")
+    {
+      std::cout << "Assembler error, symbol " << symbolName << " redefinition." << std::endl;
+      exit(1);
+    }
     symbolTable[symbolName].value = locationCounter - sectionTable[currentSection].base;
     symbolTable[symbolName].size = 0;
     symbolTable[symbolName].type = SymbolType::NOTYPE;
-    if (symbolTable.find(symbolName) == symbolTable.end())
+    if (symbolTable.count(symbolName) == 0)
     {
       symbolTable[symbolName].scope = ScopeType::LOCAL;
     }
@@ -64,6 +72,11 @@ namespace assembler
 
   void addSectionSymbol(std::string symbolName)
   {
+    if (symbolTable.count(symbolName) > 0)
+    {
+      std::cout << "Assembler error, symbol " << symbolName << " redefinition." << std::endl;
+      exit(1);
+    }
     symbolTable[symbolName] = {0, 0, SymbolType::SECTION, ScopeType::LOCAL, symbolName};
   }
 
@@ -107,11 +120,11 @@ namespace assembler
   void outputString(std::string value)
   {
     std::vector<int> bytes;
-    for (const auto& c : value)
+    for (const auto &c : value)
     {
       bytes.push_back(c);
     }
-    for (const auto& byte : bytes)
+    for (const auto &byte : bytes)
     {
       int byteHigh = (byte & 0x000000F0) >> 4;
       int byteLow = (byte & 0x0000000F);
@@ -127,6 +140,11 @@ namespace assembler
       {
         if (arg.type == "symbol")
         {
+          if (symbolTable.count(arg.value) > 0)
+          {
+            std::cout << "Assembler error, symbol " << arg.value << " redefinition." << std::endl;
+            exit(1);
+          }
           symbolTable[arg.value] = {0, 0, SymbolType::NOTYPE, ScopeType::GLOBAL, "UND"};
         }
       }
@@ -137,7 +155,12 @@ namespace assembler
       {
         if (arg.type == "symbol")
         {
-          symbolTable[arg.value].scope = ScopeType::GLOBAL;
+          if (symbolTable.count(arg.value) > 0)
+          {
+            std::cout << "Assembler error, symbol " << arg.value << " redefinition." << std::endl;
+            exit(1);
+          }
+          symbolTable[arg.value] = {0, 0, SymbolType::NOTYPE, ScopeType::GLOBAL, "UND"};
         }
       }
     }
@@ -153,12 +176,28 @@ namespace assembler
       locationCounter += directive.argList.size() * 4;
     }
     if (directive.mnemonic == "skip")
-    {      
+    {
       locationCounter += stoi(directive.argList[0].value);
     }
     if (directive.mnemonic == "ascii")
     {
       locationCounter += directive.argList[0].value.length();
+    }
+  }
+
+  void handleInstructionFirstPass(Instruction instruction)
+  {
+    locationCounter += 4;
+    if (instruction.mnemonic == "call" || instruction.mnemonic == "jmp" || instruction.mnemonic == "beq" ||
+        instruction.mnemonic == "bne" || instruction.mnemonic == "bgt")
+    {
+      if (instruction.operand_type == "sym")
+      {
+        
+      }
+    }
+    if (instruction.mnemonic == "ld" || instruction.mnemonic == "st")
+    {
     }
   }
 
@@ -174,7 +213,7 @@ namespace assembler
     }
     if (line.type == "instruction")
     {
-      locationCounter += 4;
+      handleInstructionFirstPass(line.instruction);
     }
   }
 
@@ -267,7 +306,7 @@ namespace assembler
     if (instruction.mnemonic == "iret")
     {
       outputWord(9, 3, 15, 14, 0, 0, 0, 4);
-      outputWord(9, 7, 0, 14, 0, 0, 0, 4);      
+      outputWord(9, 7, 0, 14, 0, 0, 0, 4);
     }
     // call
     if (instruction.mnemonic == "ret")
@@ -280,13 +319,13 @@ namespace assembler
     // bgt
     if (instruction.mnemonic == "push")
     {
-      int regC = getGprIndex(instruction.reg1);     
-      outputWord(8, 1, 14, 0, regC, 0, 0, 4); 
+      int regC = getGprIndex(instruction.reg1);
+      outputWord(8, 1, 14, 0, regC, 0, 0, 4);
     }
     if (instruction.mnemonic == "pop")
     {
-      int regA = getGprIndex(instruction.reg1);     
-      outputWord(9, 3, regA, 14, 0, 0, 0, 4); 
+      int regA = getGprIndex(instruction.reg1);
+      outputWord(9, 3, regA, 14, 0, 0, 0, 4);
     }
     if (instruction.mnemonic == "xchg")
     {
@@ -376,7 +415,7 @@ namespace assembler
     {
       int regA = getGprIndex(instruction.reg1);
       int regB = getCsrIndex(instruction.reg2);
-      outputWord(9, 0, regA, regB, 0, 0, 0, 0);      
+      outputWord(9, 0, regA, regB, 0, 0, 0, 0);
     }
   }
 

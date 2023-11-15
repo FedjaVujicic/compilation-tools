@@ -308,7 +308,7 @@ offset:
 
  void yyerror(const char *s) 
  {
-    fprintf (stderr, "%s\n", s);
+    std::cout << "Syntax error, line: " << yylineno << "\n";
  }
 
 // Print parsing status message
