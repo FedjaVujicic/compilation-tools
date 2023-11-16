@@ -176,24 +176,24 @@ iret:
 ;
 
 call:
-  CALL operand_jump  { currentInstruction.mnemonic = "call"; currentLineNumber = yylineno; }
+  CALL operand_branch  { currentInstruction.mnemonic = "call"; currentLineNumber = yylineno; }
 
 ret:
   RET  { currentInstruction.mnemonic = "ret"; currentLineNumber = yylineno; }
 ;
 
 jmp:
-  JMP operand_jump  { currentInstruction.mnemonic = "jmp"; currentLineNumber = yylineno; }
+  JMP operand_branch  { currentInstruction.mnemonic = "jmp"; currentLineNumber = yylineno; }
 ;
 
 beq:
-  BEQ instr_gpr1 ',' instr_gpr2 ',' operand_jump { currentInstruction.mnemonic = "beq"; currentLineNumber = yylineno; }
+  BEQ instr_gpr1 ',' instr_gpr2 ',' operand_branch { currentInstruction.mnemonic = "beq"; currentLineNumber = yylineno; }
 ;
 bne:
-  BNE instr_gpr1 ',' instr_gpr2 ',' operand_jump { currentInstruction.mnemonic = "bne"; currentLineNumber = yylineno; }
+  BNE instr_gpr1 ',' instr_gpr2 ',' operand_branch { currentInstruction.mnemonic = "bne"; currentLineNumber = yylineno; }
 ;
 bgt:
-  BGT instr_gpr1 ',' instr_gpr2 ',' operand_jump { currentInstruction.mnemonic = "bgt"; currentLineNumber = yylineno; }
+  BGT instr_gpr1 ',' instr_gpr2 ',' operand_branch { currentInstruction.mnemonic = "bgt"; currentLineNumber = yylineno; }
 ;
 
 push:
@@ -249,11 +249,11 @@ shr:
 ;
 
 ld:
-  LD operand_data ',' instr_gpr1  { currentInstruction.mnemonic = "ld"; currentLineNumber = yylineno; }
+  LD operand_ld ',' instr_gpr1  { currentInstruction.mnemonic = "ld"; currentLineNumber = yylineno; }
 ;
 
 st:
-  ST instr_gpr1 ',' operand_data { currentInstruction.mnemonic = "st"; currentLineNumber = yylineno; }
+  ST instr_gpr1 ',' operand_st { currentInstruction.mnemonic = "st"; currentLineNumber = yylineno; }
 ;
 
 csrrd:
@@ -286,23 +286,28 @@ operand_reg:
   GPR         { currentInstruction.operand = $1; }
 ;
 
-operand_data:
+operand_ld:
   '$' SYMBOL          { currentInstruction.operand = $2; currentInstruction.operand_type = "sym"; }
 | '$' NUMBER          { currentInstruction.operand = $2; currentInstruction.operand_type = "num"; }
 | SYMBOL              { currentInstruction.operand = $1; currentInstruction.operand_type = "mem[sym]"; }
 | NUMBER              { currentInstruction.operand = $1; currentInstruction.operand_type = "mem[num]"; }
-| operand_reg         { currentInstruction.operand_type = "reg"; }
 | '[' operand_reg ']' { currentInstruction.operand_type = "mem[reg]"; }
 | '[' operand_reg '+' offset ']'
 ;
 
-operand_jump:
+operand_st:
+ SYMBOL               { currentInstruction.operand = $1; currentInstruction.operand_type = "mem[sym]"; }
+| NUMBER              { currentInstruction.operand = $1; currentInstruction.operand_type = "mem[num]"; }
+| '[' operand_reg ']' { currentInstruction.operand_type = "mem[reg]"; }
+| '[' operand_reg '+' offset ']'
+;
+
+operand_branch:
  SYMBOL               { currentInstruction.operand = $1; currentInstruction.operand_type = "sym"; }
 | NUMBER              { currentInstruction.operand = $1; currentInstruction.operand_type = "num"; }
 
 offset:
   NUMBER      { currentInstruction.offset = $1; currentInstruction.operand_type = "mem[reg+num]"; }
-| SYMBOL      { currentInstruction.offset = $1; currentInstruction.operand_type = "mem[reg+sym]"; }
 
 %%
 
@@ -360,3 +365,17 @@ void printParsingData()
     }
   }
 }
+
+/* operand_data:
+  '$' SYMBOL          { currentInstruction.operand = $2; currentInstruction.operand_type = "sym"; }
+| '$' NUMBER          { currentInstruction.operand = $2; currentInstruction.operand_type = "num"; }
+| SYMBOL              { currentInstruction.operand = $1; currentInstruction.operand_type = "mem[sym]"; }
+| NUMBER              { currentInstruction.operand = $1; currentInstruction.operand_type = "mem[num]"; }
+| operand_reg         { currentInstruction.operand_type = "reg"; }
+| '[' operand_reg ']' { currentInstruction.operand_type = "mem[reg]"; }
+| '[' operand_reg '+' offset ']'
+; */
+
+/* offset:
+  NUMBER      { currentInstruction.offset = $1; currentInstruction.operand_type = "mem[reg+num]"; }
+| SYMBOL      { currentInstruction.offset = $1; currentInstruction.operand_type = "mem[reg+sym]"; } */

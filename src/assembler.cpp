@@ -16,10 +16,22 @@ namespace assembler
   std::ofstream outputFile;
   std::unordered_map<std::string, Symbol> symbolTable;
   std::unordered_map<std::string, Section> sectionTable;
-  std::unordered_map<int, int> literalTable;
+  std::unordered_map<int, int> literalNumTable;
   std::unordered_map<std::string, int> literalSymTable;
   std::string currentSection = "ABS";
   unsigned locationCounter = 0;
+
+  int stringToInt(std::string value)
+  {
+    if (value.length() > 2)
+    {
+      if (value[0] == '0' && value[1] == 'x')
+      {
+        return std::stoul(value, nullptr, 16);
+      }
+    }
+    return stoi(value);
+  }
 
   bool isContentOutOfSection(Line line)
   {
@@ -208,35 +220,51 @@ namespace assembler
 
   void handleInstructionFirstPass(Instruction instruction)
   {
+    if (instruction.mnemonic == "iret" ||
+        (instruction.mnemonic == "ld" && (instruction.operand_type == "mem[num]" || instruction.operand_type == "mem[sym]")))
+    {
+      locationCounter += 4;
+    }
     locationCounter += 4;
+
     if (instruction.mnemonic == "call" || instruction.mnemonic == "jmp" || instruction.mnemonic == "beq" ||
         instruction.mnemonic == "bne" || instruction.mnemonic == "bgt")
     {
+      if (instruction.operand_type == "num")
+      {
+        literalNumTable[stringToInt(instruction.operand)];
+      }
       if (instruction.operand_type == "sym")
       {
         addInstructionSymbol(instruction.operand);
+        literalSymTable[instruction.operand];
       }
-      // Bazen literala
     }
+
     if (instruction.mnemonic == "st")
     {
+      if (instruction.operand_type == "mem[num]")
+      {
+        literalNumTable[stringToInt(instruction.operand)];
+      }
       if (instruction.operand_type == "mem[sym]")
       {
         addInstructionSymbol(instruction.operand);
+        literalSymTable[instruction.operand];
       }
-      // Bazen literala
     }
+
     if (instruction.mnemonic == "ld")
     {
-      if (instruction.operand_type == "sym")
+      if (instruction.operand_type == "num" || instruction.operand_type == "mem[num]")
+      {
+        literalNumTable[stringToInt(instruction.operand)];
+      }
+      if (instruction.operand_type == "sym" || instruction.operand_type == "mem[sym]")
       {
         addInstructionSymbol(instruction.operand);
+        literalSymTable[instruction.operand];
       }
-      if (instruction.operand_type == "mem[sym]")
-      {
-        addInstructionSymbol(instruction.operand);
-      }
-      // Bazen literala
     }
   }
 
@@ -254,18 +282,6 @@ namespace assembler
     {
       handleInstructionFirstPass(line.instruction);
     }
-  }
-
-  int stringToInt(std::string value)
-  {
-    if (value.length() > 2)
-    {
-      if (value[0] == '0' && value[1] == 'x')
-      {
-        return std::stoul(value, nullptr, 16);
-      }
-    }
-    return stoi(value);
   }
 
   void handleDirectiveSecondPass(Directive directive)
@@ -480,11 +496,43 @@ namespace assembler
     }
   }
 
+  void outputLiteralPool()
+  {
+    std::cout << "LiteralNumTable" << std::endl;
+    for (const auto& num : literalNumTable)
+    {
+      std::cout << num.first << ": " << num.second << std::endl;
+    }
+    std::cout << "LiteralSymTable" << std::endl;
+    for (const auto& sym : literalSymTable)
+    {
+      std::cout << sym.first << ": " << sym.second << std::endl;
+    }
+  }
+
+  void createLiteralPool()
+  {
+    std::cout << locationCounter << std::endl;
+    for (auto& num : literalNumTable)
+    {
+      num.second = locationCounter;
+      locationCounter += 4;
+    }
+    for (auto& sym : literalSymTable)
+    {
+      sym.second = locationCounter;
+      locationCounter += 4;
+    }
+    outputLiteralPool();
+    std::cout << locationCounter << std::endl;
+  }
+
   void firstPass()
   {
     yyin = inputFile;
     int parseStatus = yyparse();
     printParsingStatus(parseStatus);
+    createLiteralPool();
     locationCounter = 0;
     currentSection = "ABS";
   }
