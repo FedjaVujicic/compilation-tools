@@ -212,21 +212,31 @@ namespace assembler
     if (instruction.mnemonic == "call" || instruction.mnemonic == "jmp" || instruction.mnemonic == "beq" ||
         instruction.mnemonic == "bne" || instruction.mnemonic == "bgt")
     {
-      if (instruction.operand_type == "num")
-      {
-        // bazen literala
-      }
       if (instruction.operand_type == "sym")
       {
         addInstructionSymbol(instruction.operand);
-        // bazen literala
       }
+      // Bazen literala
     }
     if (instruction.mnemonic == "st")
     {
+      if (instruction.operand_type == "mem[sym]")
+      {
+        addInstructionSymbol(instruction.operand);
+      }
+      // Bazen literala
     }
     if (instruction.mnemonic == "ld")
     {
+      if (instruction.operand_type == "sym")
+      {
+        addInstructionSymbol(instruction.operand);
+      }
+      if (instruction.operand_type == "mem[sym]")
+      {
+        addInstructionSymbol(instruction.operand);
+      }
+      // Bazen literala
     }
   }
 
