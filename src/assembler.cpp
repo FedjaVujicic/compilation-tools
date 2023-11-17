@@ -125,6 +125,17 @@ namespace assembler
     outputByte(byte4High, byte4Low);
   }
 
+  void outputWordDisp(int byte4High, int byte4Low, int byte3High, int byte3Low, int byte2High, int disp)
+  {
+    int byte2Low = (disp & 0x00000F00) >> 8;
+    int byte1High = (disp & 0x000000F0) >> 4;
+    int byte1Low = (disp & 0x0000000F);
+    outputByte(byte1High, byte1Low);
+    outputByte(byte2High, byte2Low);
+    outputByte(byte3High, byte3Low);
+    outputByte(byte4High, byte4Low);
+  }
+
   void outputInteger(int value)
   {
     int byte4High = (value & 0xF0000000) >> 28;
@@ -348,6 +359,15 @@ namespace assembler
     exit(1);
   }
 
+  int getDisplacement(std::string operand, std::string type)
+  {
+    if (type == "num")
+    {
+      return literalNumTable[stringToInt(operand)] - locationCounter;
+    }
+    return literalSymTable[operand] - locationCounter;
+  }
+
   void handleInstructionSecondPass(Instruction instruction)
   {
     if (instruction.mnemonic == "halt")
@@ -363,15 +383,41 @@ namespace assembler
       outputWord(9, 3, 15, 14, 0, 0, 0, 4);
       outputWord(9, 7, 0, 14, 0, 0, 0, 4);
     }
-    // call
+    if (instruction.mnemonic == "call")
+    {
+      int disp = getDisplacement(instruction.operand, instruction.operand_type);
+      outputWordDisp(2, 1, 15, 0, 0, disp);
+    }
     if (instruction.mnemonic == "ret")
     {
       outputWord(9, 3, 15, 14, 0, 0, 0, 4);
     }
-    // jmp
-    // beq
-    // bne
-    // bgt
+    if (instruction.mnemonic == "jmp")
+    {
+      int disp = getDisplacement(instruction.operand, instruction.operand_type);
+      outputWordDisp(3, 8, 15, 0, 0, disp);
+    }
+    if (instruction.mnemonic == "beq")
+    {
+      int disp = getDisplacement(instruction.operand, instruction.operand_type);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputWordDisp(3, 9, 15, regB, regC, disp);
+    }
+    if (instruction.mnemonic == "bne")
+    {
+      int disp = getDisplacement(instruction.operand, instruction.operand_type);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputWordDisp(3, 10, 15, regB, regC, disp);
+    }
+    if (instruction.mnemonic == "bgt")
+    {
+      int disp = getDisplacement(instruction.operand, instruction.operand_type);
+      int regB = getGprIndex(instruction.reg1);
+      int regC = getGprIndex(instruction.reg2);
+      outputWordDisp(3, 11, 15, regB, regC, disp);
+    }
     if (instruction.mnemonic == "push")
     {
       int regC = getGprIndex(instruction.reg1);
@@ -458,8 +504,12 @@ namespace assembler
       int regC = getGprIndex(instruction.reg2);
       outputWord(7, 1, regA, regB, regC, 0, 0, 0);
     }
-    // ld
-    // st
+    if (instruction.mnemonic == "ld")
+    {
+    }
+    if (instruction.mnemonic == "st")
+    {
+    }
     if (instruction.mnemonic == "csrrd")
     {
       int regA = getCsrIndex(instruction.reg1);
@@ -499,12 +549,12 @@ namespace assembler
   void outputLiteralPool()
   {
     std::cout << "LiteralNumTable" << std::endl;
-    for (const auto& num : literalNumTable)
+    for (const auto &num : literalNumTable)
     {
       std::cout << num.first << ": " << num.second << std::endl;
     }
     std::cout << "LiteralSymTable" << std::endl;
-    for (const auto& sym : literalSymTable)
+    for (const auto &sym : literalSymTable)
     {
       std::cout << sym.first << ": " << sym.second << std::endl;
     }
@@ -512,19 +562,17 @@ namespace assembler
 
   void createLiteralPool()
   {
-    std::cout << locationCounter << std::endl;
-    for (auto& num : literalNumTable)
+    for (auto &num : literalNumTable)
     {
       num.second = locationCounter;
       locationCounter += 4;
     }
-    for (auto& sym : literalSymTable)
+    for (auto &sym : literalSymTable)
     {
       sym.second = locationCounter;
       locationCounter += 4;
     }
     outputLiteralPool();
-    std::cout << locationCounter << std::endl;
   }
 
   void firstPass()

@@ -13,6 +13,9 @@ halt
 halt
 d: halt
 
+jmp asdf
+jmp 0x1234
+jmp qwer
 
 asdf:halt
 zxcv:halt
