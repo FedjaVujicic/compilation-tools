@@ -28,3 +28,7 @@ call function
 halt
 halt
 halt
+st %r1, 0x12345678
+st %r1, label
+st %r1, [%r2]
+st %r1, [%r2 + 0x123]

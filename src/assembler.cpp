@@ -361,7 +361,7 @@ namespace assembler
 
   int getDisplacement(std::string operand, std::string type)
   {
-    if (type == "num")
+    if (type == "num" || type == "mem[num]")
     {
       return literalNumTable[stringToInt(operand)] - locationCounter;
     }
@@ -509,6 +509,30 @@ namespace assembler
     }
     if (instruction.mnemonic == "st")
     {
+      if (instruction.operand_type == "mem[num]" || instruction.operand_type == "mem[sym]")
+      {
+        int disp = getDisplacement(instruction.operand, instruction.operand_type);
+        int regC = getGprIndex(instruction.reg1);
+        outputWordDisp(8, 2, 15, 0, regC, disp);
+      }
+      if (instruction.operand_type == "mem[reg]")
+      {
+        int regC = getGprIndex(instruction.reg1);
+        int regA = getGprIndex(instruction.operand);
+        outputWord(8, 0, regA, 0, regC, 0, 0, 0);
+      }
+      if (instruction.operand_type == "mem[reg+num]")
+      {
+        if (stringToInt(instruction.offset) > 4095)
+        {
+          std::cout << "Error. Maximum allowed offset is 0xFFF" << std::endl;
+          exit(1);
+        }
+        int regC = getGprIndex(instruction.reg1);
+        int regA = getGprIndex(instruction.operand);
+        int disp = stringToInt(instruction.offset);
+        outputWordDisp(8, 0, regA, 0, regC, disp);
+      }
     }
     if (instruction.mnemonic == "csrrd")
     {
