@@ -506,6 +506,36 @@ namespace assembler
     }
     if (instruction.mnemonic == "ld")
     {
+      if (instruction.operand_type == "num" || instruction.operand_type == "sym" ||
+          instruction.operand_type == "mem[num]" || instruction.operand_type == "mem[sym]")
+      {
+        int disp = getDisplacement(instruction.operand, instruction.operand_type);
+        int regA = getGprIndex(instruction.reg1);
+        outputWordDisp(9, 2, regA, 15, 0, disp);
+      }
+      if (instruction.operand_type == "mem[num]" || instruction.operand_type == "mem[sym]")
+      {
+        int regA = getGprIndex(instruction.reg1);
+        outputWord(9, 2, regA, regA, 0, 0, 0, 0);
+      }
+      if (instruction.operand_type == "mem[reg]")
+      {
+        int regA = getGprIndex(instruction.reg1);
+        int regB = getGprIndex(instruction.operand);
+        outputWord(9, 2, regA, regB, 0, 0, 0, 0);
+      }
+      if (instruction.operand_type == "mem[reg+num]")
+      {
+        if (stringToInt(instruction.offset) > 4095)
+        {
+          std::cout << "Error. Maximum allowed offset is 0xFFF" << std::endl;
+          exit(1);
+        }
+        int regA = getGprIndex(instruction.reg1);
+        int regB = getGprIndex(instruction.operand);
+        int disp = stringToInt(instruction.offset);
+        outputWordDisp(9, 2, regA, regB, 0, disp);
+      }
     }
     if (instruction.mnemonic == "st")
     {

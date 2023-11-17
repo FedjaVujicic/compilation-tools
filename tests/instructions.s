@@ -32,3 +32,11 @@ st %r1, 0x12345678
 st %r1, label
 st %r1, [%r2]
 st %r1, [%r2 + 0x123]
+halt
+halt
+ld $0x12345678, %r1
+ld $label, %r1
+ld 0x12345678, %r1
+ld label, %r1
+ld [%r2], %r1
+ld [%r2 + 0x123], %r1
