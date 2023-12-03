@@ -1,8 +1,11 @@
 #include <vector>
 #include <iomanip>
 #include <unordered_map>
-#include "../inc/assembler.hpp"
 #include "../misc/parser.hpp"
+#include "../inc/assembler.hpp"
+#include "../inc/relocation.hpp"
+#include "../inc/symbol.hpp"
+#include "../inc/section.hpp"
 
 extern std::vector<Line> parsedLines;
 extern FILE *yyin;
@@ -16,8 +19,9 @@ namespace assembler
   std::ofstream outputFile;
   std::unordered_map<std::string, Symbol> symbolTable;
   std::unordered_map<std::string, Section> sectionTable;
-  std::unordered_map<int, int> literalNumTable;
-  std::unordered_map<std::string, int> literalSymTable;
+  std::map<std::pair<std::string, int>, int> literalNumTable;
+  std::map<std::pair<std::string, std::string>, int> literalSymTable;
+  std::unordered_map<std::string, Relocation> relocationTable;
   std::string currentSection = "ABS";
   unsigned locationCounter = 0;
 
@@ -102,6 +106,10 @@ namespace assembler
     symbolTable[symbolName] = {0, 0, SymbolType::NOTYPE, ScopeType::GLOBAL, "UND"};
   }
 
+  void addRelocation(std::string symbol)
+  {
+  }
+
   void outputByte(int byteHigh, int byteLow)
   {
     if (!(locationCounter % 8))
@@ -165,6 +173,28 @@ namespace assembler
     }
   }
 
+  void literalPoolFirstPass()
+  {
+    for (auto &num : literalNumTable)
+    {
+      if (num.first.first != currentSection)
+      {
+        continue;
+      }
+      num.second = locationCounter;
+      locationCounter += 4;
+    }
+    for (auto &sym : literalSymTable)
+    {
+      if (sym.first.first != currentSection)
+      {
+        continue;
+      }
+      sym.second = locationCounter;
+      locationCounter += 4;
+    }
+  }
+
   void handleDirectiveFirstPass(Directive directive)
   {
     if (directive.mnemonic == "extern")
@@ -199,6 +229,14 @@ namespace assembler
     }
     if (directive.mnemonic == "section")
     {
+      if (currentSection != "ABS")
+      {
+        literalPoolFirstPass();
+      }
+      while (locationCounter % 8)
+      {
+        ++locationCounter;
+      }
       addSectionSymbol(directive.argList[0].value);
       sectionTable[currentSection].length = locationCounter - sectionTable[currentSection].base;
       currentSection = directive.argList[0].value;
@@ -243,12 +281,12 @@ namespace assembler
     {
       if (instruction.operand_type == "num")
       {
-        literalNumTable[stringToInt(instruction.operand)];
+        literalNumTable[std::make_pair(currentSection, stringToInt(instruction.operand))];
       }
       if (instruction.operand_type == "sym")
       {
         addInstructionSymbol(instruction.operand);
-        literalSymTable[instruction.operand];
+        literalSymTable[std::make_pair(currentSection, instruction.operand)];
       }
     }
 
@@ -256,12 +294,12 @@ namespace assembler
     {
       if (instruction.operand_type == "mem[num]")
       {
-        literalNumTable[stringToInt(instruction.operand)];
+        literalNumTable[std::make_pair(currentSection, stringToInt(instruction.operand))];
       }
       if (instruction.operand_type == "mem[sym]")
       {
         addInstructionSymbol(instruction.operand);
-        literalSymTable[instruction.operand];
+        literalSymTable[std::make_pair(currentSection, instruction.operand)];
       }
     }
 
@@ -269,12 +307,12 @@ namespace assembler
     {
       if (instruction.operand_type == "num" || instruction.operand_type == "mem[num]")
       {
-        literalNumTable[stringToInt(instruction.operand)];
+        literalNumTable[std::make_pair(currentSection, stringToInt(instruction.operand))];
       }
       if (instruction.operand_type == "sym" || instruction.operand_type == "mem[sym]")
       {
         addInstructionSymbol(instruction.operand);
-        literalSymTable[instruction.operand];
+        literalSymTable[std::make_pair(currentSection, instruction.operand)];
       }
     }
   }
@@ -303,9 +341,8 @@ namespace assembler
       {
         if (arg.type == "symbol")
         {
-          // output 0000 0000
+          outputInteger(0);
           // add relocation
-          continue;
         }
         if (arg.type == "number")
         {
@@ -363,9 +400,9 @@ namespace assembler
   {
     if (type == "num" || type == "mem[num]")
     {
-      return literalNumTable[stringToInt(operand)] - locationCounter;
+      return literalNumTable[std::make_pair(currentSection, stringToInt(operand))] - locationCounter;
     }
-    return literalSymTable[operand] - locationCounter;
+    return literalSymTable[std::make_pair(currentSection, operand)] - locationCounter;
   }
 
   void handleInstructionSecondPass(Instruction instruction)
@@ -600,33 +637,34 @@ namespace assembler
     }
   }
 
-  void outputLiteralPool()
+  void literalPoolSecondPass()
   {
+    if (locationCounter % 8)
+    {
+      outputFile << std::endl;
+    }
+    outputFile << "#." << currentSection << ".literal" << std::endl;
     std::cout << "LiteralNumTable" << std::endl;
     for (const auto &num : literalNumTable)
     {
-      std::cout << num.first << ": " << num.second << std::endl;
+      if (num.first.first != currentSection)
+      {
+        continue;
+      }
+      std::cout << (num.first).second << ": " << num.second << std::endl;
+      outputInteger((num.first).second);
     }
     std::cout << "LiteralSymTable" << std::endl;
     for (const auto &sym : literalSymTable)
     {
-      std::cout << sym.first << ": " << sym.second << std::endl;
+      if (sym.first.first != currentSection)
+      {
+        continue;
+      }
+      std::cout << (sym.first).second << ": " << sym.second << std::endl;
+      outputInteger(0);
+      // relocation
     }
-  }
-
-  void createLiteralPool()
-  {
-    for (auto &num : literalNumTable)
-    {
-      num.second = locationCounter;
-      locationCounter += 4;
-    }
-    for (auto &sym : literalSymTable)
-    {
-      sym.second = locationCounter;
-      locationCounter += 4;
-    }
-    outputLiteralPool();
   }
 
   void firstPass()
@@ -634,7 +672,8 @@ namespace assembler
     yyin = inputFile;
     int parseStatus = yyparse();
     printParsingStatus(parseStatus);
-    createLiteralPool();
+    literalPoolFirstPass();
+    std::cout << "Location Counter after first pass: " << locationCounter << std::endl;
     locationCounter = 0;
     currentSection = "ABS";
   }
@@ -648,6 +687,18 @@ namespace assembler
       {
         if (line.directive.mnemonic == "section")
         {
+          if (currentSection != "ABS")
+          {
+            literalPoolSecondPass();
+          }
+          if (locationCounter % 8)
+          {
+            outputFile << std::endl;
+          }
+          while (locationCounter % 8)
+          {
+            ++locationCounter;
+          }
           currentSection = line.directive.argList[0].value;
           outputFile << "#." << currentSection << std::endl;
         }
@@ -666,6 +717,8 @@ namespace assembler
         handleInstructionSecondPass(line.instruction);
       }
     }
+    literalPoolSecondPass();
+    std::cout << "Location Counter after second pass: " << locationCounter << std::endl;
     locationCounter = 0;
   }
 

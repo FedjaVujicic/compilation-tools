@@ -4,8 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <map>
-#include "symbol.hpp"
-#include "section.hpp"
 #include "../misc/parser_data.hpp"
 
 

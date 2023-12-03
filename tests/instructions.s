@@ -40,3 +40,12 @@ ld 0x12345678, %r1
 ld label, %r1
 ld [%r2], %r1
 ld [%r2 + 0x123], %r1
+.ascii "a"
+asdf:
+jmp 0xBBBB
+
+.section text
+jmp qwer
+qwer:
+jmp 0xAAAA
+jmp 0xCCCC
