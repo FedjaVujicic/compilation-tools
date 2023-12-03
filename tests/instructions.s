@@ -1,4 +1,5 @@
 .section code
+.word asdf
 halt
 int
 iret
@@ -49,3 +50,5 @@ jmp qwer
 qwer:
 jmp 0xAAAA
 jmp 0xCCCC
+.word asdf
+.word aezakmi

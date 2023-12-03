@@ -1,6 +1,7 @@
 #include <vector>
 #include <iomanip>
 #include <unordered_map>
+#include <unordered_set>
 #include "../misc/parser.hpp"
 #include "../inc/assembler.hpp"
 #include "../inc/relocation.hpp"
@@ -17,11 +18,12 @@ namespace assembler
 {
   FILE *inputFile;
   std::ofstream outputFile;
+  std::unordered_set<std::string> globalSymbols;
   std::unordered_map<std::string, Symbol> symbolTable;
   std::unordered_map<std::string, Section> sectionTable;
   std::map<std::pair<std::string, unsigned>, unsigned> literalNumTable;
   std::map<std::pair<std::string, std::string>, unsigned> literalSymTable;
-  std::unordered_map<std::string, Relocation> relocationTable;
+  std::unordered_map<std::string, std::vector<Relocation>> relocationTable;
   std::string currentSection = "ABS";
   unsigned locationCounter = 0;
 
@@ -89,13 +91,13 @@ namespace assembler
       std::cout << "Assembler error, symbol " << symbolName << " redefinition." << std::endl;
       exit(1);
     }
-    symbolTable[symbolName].value = locationCounter - sectionTable[currentSection].base;
-    symbolTable[symbolName].size = 0;
-    symbolTable[symbolName].type = SymbolType::NOTYPE;
-    if (symbolTable.count(symbolName) == 0)
+    if (globalSymbols.count(symbolName) == 0)
     {
       symbolTable[symbolName].scope = ScopeType::LOCAL;
     }
+    symbolTable[symbolName].value = locationCounter - sectionTable[currentSection].base;
+    symbolTable[symbolName].size = 0;
+    symbolTable[symbolName].type = SymbolType::NOTYPE;
     symbolTable[symbolName].section = currentSection;
   }
 
@@ -118,8 +120,41 @@ namespace assembler
     symbolTable[symbolName] = {0, 0, SymbolType::NOTYPE, ScopeType::GLOBAL, "UND"};
   }
 
-  void addRelocation(std::string symbol)
+  void addRelocationInstruction(std::string symbolName)
   {
+    unsigned relOffset = literalSymTable[std::make_pair(currentSection, symbolName)];
+    unsigned relAddend;
+    std::string relSymbolName;
+    if (symbolTable[symbolName].scope == ScopeType::LOCAL)
+    {
+      relAddend = symbolTable[symbolName].value;
+      relSymbolName = symbolTable[symbolName].section;
+    }
+    else if (symbolTable[symbolName].scope == ScopeType::GLOBAL)
+    {
+      relAddend = 0;
+      relSymbolName = symbolName;
+    }
+    relocationTable[currentSection].push_back({relOffset, relSymbolName, relAddend});
+  }
+
+  void addRelocationWordDirective(std::string symbolName)
+  {
+    unsigned relOffset = locationCounter;
+    unsigned relAddend = 0;
+    std::string relSymbolName;
+    if (symbolTable[symbolName].scope == ScopeType::LOCAL)
+    {
+      relAddend = symbolTable[symbolName].value;
+      relSymbolName = symbolTable[symbolName].section;
+    }
+    else if (symbolTable[symbolName].scope == ScopeType::GLOBAL)
+    {
+      relAddend = 0;
+      relSymbolName = symbolName;
+    }
+    relocationTable[currentSection].push_back({relOffset, relSymbolName, relAddend});
+    
   }
 
   void outputByte(unsigned byteHigh, unsigned byteLow)
@@ -221,6 +256,7 @@ namespace assembler
             exit(1);
           }
           symbolTable[arg.value] = {0, 0, SymbolType::NOTYPE, ScopeType::GLOBAL, "UND"};
+          globalSymbols.insert(arg.value);
         }
       }
     }
@@ -236,6 +272,7 @@ namespace assembler
             exit(1);
           }
           symbolTable[arg.value] = {0, 0, SymbolType::NOTYPE, ScopeType::GLOBAL, "UND"};
+          globalSymbols.insert(arg.value);
         }
       }
     }
@@ -353,8 +390,8 @@ namespace assembler
       {
         if (arg.type == "symbol")
         {
+          addRelocationWordDirective(arg.value);
           outputInteger(0);
-          // add relocation
         }
         if (arg.type == "number")
         {
@@ -649,33 +686,47 @@ namespace assembler
     }
   }
 
+  void outputRelocationTables()
+  {
+    for (const auto& section : sectionTable)
+    {
+      if (section.first == "ABS")
+      {
+        continue;
+      }
+      outputFile << "#.rela." << section.first << std::endl;
+      outputFile << std::setw(10) << std::left << std::setfill(' ') << "Offset";
+      outputFile << std::setw(20) << std::left << std::setfill(' ') << "Symbol";
+      outputFile << std::setw(10) << std::left << std::setfill(' ') << "Addend";
+      outputFile << std::endl;
+      for (const auto &rel : relocationTable[section.first])
+      {
+        outputFile << std::setw(8) << std::right << std::setfill('0') << std::hex << rel.offset << "  ";
+        outputFile << std::setw(20) << std::left << std::setfill(' ') << rel.symbolName;
+        outputFile << std::setw(10) << std::left << std::setfill(' ') << std::dec << rel.addend;
+        outputFile << std::endl;
+      }
+    }
+  }
+
   void literalPoolSecondPass()
   {
-    if (locationCounter % 8)
-    {
-      outputFile << std::endl;
-    }
-    outputFile << "#." << currentSection << ".literal" << std::endl;
-    std::cout << "LiteralNumTable" << std::endl;
     for (const auto &num : literalNumTable)
     {
       if (num.first.first != currentSection)
       {
         continue;
       }
-      std::cout << (num.first).second << ": " << num.second << std::endl;
       outputInteger((num.first).second);
     }
-    std::cout << "LiteralSymTable" << std::endl;
     for (const auto &sym : literalSymTable)
     {
       if (sym.first.first != currentSection)
       {
         continue;
       }
-      std::cout << (sym.first).second << ": " << sym.second << std::endl;
       outputInteger(0);
-      // relocation
+      addRelocationInstruction(sym.first.second);
     }
   }
 
@@ -683,9 +734,7 @@ namespace assembler
   {
     yyin = inputFile;
     int parseStatus = yyparse();
-    printParsingStatus(parseStatus);
     literalPoolFirstPass();
-    std::cout << "Location Counter after first pass: " << locationCounter << std::endl;
     locationCounter = 0;
     currentSection = "ABS";
   }
@@ -730,7 +779,7 @@ namespace assembler
       }
     }
     literalPoolSecondPass();
-    std::cout << "Location Counter after second pass: " << locationCounter << std::endl;
+    outputRelocationTables();
     locationCounter = 0;
   }
 

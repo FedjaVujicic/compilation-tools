@@ -3,8 +3,9 @@
 
 struct Relocation
 {
-  int offset;
-  int addend;
+  unsigned offset;
+  std::string symbolName;
+  unsigned addend;
 };
 
 #endif
