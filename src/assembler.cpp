@@ -19,13 +19,25 @@ namespace assembler
   std::ofstream outputFile;
   std::unordered_map<std::string, Symbol> symbolTable;
   std::unordered_map<std::string, Section> sectionTable;
-  std::map<std::pair<std::string, int>, int> literalNumTable;
-  std::map<std::pair<std::string, std::string>, int> literalSymTable;
+  std::map<std::pair<std::string, unsigned>, unsigned> literalNumTable;
+  std::map<std::pair<std::string, std::string>, unsigned> literalSymTable;
   std::unordered_map<std::string, Relocation> relocationTable;
   std::string currentSection = "ABS";
   unsigned locationCounter = 0;
 
-  int stringToInt(std::string value)
+  unsigned stringToUnsignedInt(std::string value)
+  {
+    if (value.length() > 2)
+    {
+      if (value[0] == '0' && value[1] == 'x')
+      {
+        return std::stoul(value, nullptr, 16);
+      }
+    }
+    return stoi(value);
+  }
+
+  int stringToSignedInt(std::string value)
   {
     if (value.length() > 2)
     {
@@ -110,7 +122,7 @@ namespace assembler
   {
   }
 
-  void outputByte(int byteHigh, int byteLow)
+  void outputByte(unsigned byteHigh, unsigned byteLow)
   {
     if (!(locationCounter % 8))
     {
@@ -125,7 +137,7 @@ namespace assembler
     }
   }
 
-  void outputWord(int byte4High, int byte4Low, int byte3High, int byte3Low, int byte2High, int byte2Low, int byte1High, int byte1Low)
+  void outputWord(unsigned byte4High, unsigned byte4Low, unsigned byte3High, unsigned byte3Low, unsigned byte2High, unsigned byte2Low, unsigned byte1High, unsigned byte1Low)
   {
     outputByte(byte1High, byte1Low);
     outputByte(byte2High, byte2Low);
@@ -133,42 +145,42 @@ namespace assembler
     outputByte(byte4High, byte4Low);
   }
 
-  void outputWordDisp(int byte4High, int byte4Low, int byte3High, int byte3Low, int byte2High, int disp)
+  void outputWordDisp(unsigned byte4High, unsigned byte4Low, unsigned byte3High, unsigned byte3Low, unsigned byte2High, unsigned disp)
   {
-    int byte2Low = (disp & 0x00000F00) >> 8;
-    int byte1High = (disp & 0x000000F0) >> 4;
-    int byte1Low = (disp & 0x0000000F);
+    unsigned byte2Low = (disp & 0x00000F00) >> 8;
+    unsigned byte1High = (disp & 0x000000F0) >> 4;
+    unsigned byte1Low = (disp & 0x0000000F);
     outputByte(byte1High, byte1Low);
     outputByte(byte2High, byte2Low);
     outputByte(byte3High, byte3Low);
     outputByte(byte4High, byte4Low);
   }
 
-  void outputInteger(int value)
+  void outputInteger(unsigned value)
   {
-    int byte4High = (value & 0xF0000000) >> 28;
-    int byte4Low = (value & 0x0F000000) >> 24;
-    int byte3High = (value & 0x00F00000) >> 20;
-    int byte3Low = (value & 0x000F0000) >> 16;
-    int byte2High = (value & 0x0000F000) >> 12;
-    int byte2Low = (value & 0x00000F00) >> 8;
-    int byte1High = (value & 0x000000F0) >> 4;
-    int byte1Low = (value & 0x0000000F);
+    unsigned byte4High = (value & 0xF0000000) >> 28;
+    unsigned byte4Low = (value & 0x0F000000) >> 24;
+    unsigned byte3High = (value & 0x00F00000) >> 20;
+    unsigned byte3Low = (value & 0x000F0000) >> 16;
+    unsigned byte2High = (value & 0x0000F000) >> 12;
+    unsigned byte2Low = (value & 0x00000F00) >> 8;
+    unsigned byte1High = (value & 0x000000F0) >> 4;
+    unsigned byte1Low = (value & 0x0000000F);
     outputWord(byte4High, byte4Low, byte3High, byte3Low,
                byte2High, byte2Low, byte1High, byte1Low);
   }
 
   void outputString(std::string value)
   {
-    std::vector<int> bytes;
+    std::vector<unsigned> bytes;
     for (const auto &c : value)
     {
       bytes.push_back(c);
     }
     for (const auto &byte : bytes)
     {
-      int byteHigh = (byte & 0x000000F0) >> 4;
-      int byteLow = (byte & 0x0000000F);
+      unsigned byteHigh = (byte & 0x000000F0) >> 4;
+      unsigned byteLow = (byte & 0x0000000F);
       outputByte(byteHigh, byteLow);
     }
   }
@@ -281,7 +293,7 @@ namespace assembler
     {
       if (instruction.operand_type == "num")
       {
-        literalNumTable[std::make_pair(currentSection, stringToInt(instruction.operand))];
+        literalNumTable[std::make_pair(currentSection, stringToUnsignedInt(instruction.operand))];
       }
       if (instruction.operand_type == "sym")
       {
@@ -294,7 +306,7 @@ namespace assembler
     {
       if (instruction.operand_type == "mem[num]")
       {
-        literalNumTable[std::make_pair(currentSection, stringToInt(instruction.operand))];
+        literalNumTable[std::make_pair(currentSection, stringToUnsignedInt(instruction.operand))];
       }
       if (instruction.operand_type == "mem[sym]")
       {
@@ -307,7 +319,7 @@ namespace assembler
     {
       if (instruction.operand_type == "num" || instruction.operand_type == "mem[num]")
       {
-        literalNumTable[std::make_pair(currentSection, stringToInt(instruction.operand))];
+        literalNumTable[std::make_pair(currentSection, stringToUnsignedInt(instruction.operand))];
       }
       if (instruction.operand_type == "sym" || instruction.operand_type == "mem[sym]")
       {
@@ -346,15 +358,15 @@ namespace assembler
         }
         if (arg.type == "number")
         {
-          int value = stringToInt(arg.value);
+          unsigned value = stringToUnsignedInt(arg.value);
           outputInteger(value);
         }
       }
     }
     if (directive.mnemonic == "skip")
     {
-      int size = stoi(directive.argList[0].value);
-      for (int i = 0; i < size; ++i)
+      unsigned size = stoi(directive.argList[0].value);
+      for (unsigned i = 0; i < size; ++i)
       {
         outputByte(0, 0);
       }
@@ -365,7 +377,7 @@ namespace assembler
     }
   }
 
-  int getGprIndex(std::string regCode)
+  unsigned getGprIndex(std::string regCode)
   {
     if (regCode == "%sp")
     {
@@ -378,7 +390,7 @@ namespace assembler
     return stoi(regCode.substr(2, std::string::npos));
   }
 
-  int getCsrIndex(std::string regCode)
+  unsigned getCsrIndex(std::string regCode)
   {
     if (regCode == "%status")
     {
@@ -396,11 +408,11 @@ namespace assembler
     exit(1);
   }
 
-  int getDisplacement(std::string operand, std::string type)
+  unsigned getDisplacement(std::string operand, std::string type)
   {
     if (type == "num" || type == "mem[num]")
     {
-      return literalNumTable[std::make_pair(currentSection, stringToInt(operand))] - locationCounter;
+      return literalNumTable[std::make_pair(currentSection, stringToUnsignedInt(operand))] - locationCounter;
     }
     return literalSymTable[std::make_pair(currentSection, operand)] - locationCounter;
   }
@@ -422,7 +434,7 @@ namespace assembler
     }
     if (instruction.mnemonic == "call")
     {
-      int disp = getDisplacement(instruction.operand, instruction.operand_type);
+      unsigned disp = getDisplacement(instruction.operand, instruction.operand_type);
       outputWordDisp(2, 1, 15, 0, 0, disp);
     }
     if (instruction.mnemonic == "ret")
@@ -431,114 +443,114 @@ namespace assembler
     }
     if (instruction.mnemonic == "jmp")
     {
-      int disp = getDisplacement(instruction.operand, instruction.operand_type);
+      unsigned disp = getDisplacement(instruction.operand, instruction.operand_type);
       outputWordDisp(3, 8, 15, 0, 0, disp);
     }
     if (instruction.mnemonic == "beq")
     {
-      int disp = getDisplacement(instruction.operand, instruction.operand_type);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned disp = getDisplacement(instruction.operand, instruction.operand_type);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWordDisp(3, 9, 15, regB, regC, disp);
     }
     if (instruction.mnemonic == "bne")
     {
-      int disp = getDisplacement(instruction.operand, instruction.operand_type);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned disp = getDisplacement(instruction.operand, instruction.operand_type);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWordDisp(3, 10, 15, regB, regC, disp);
     }
     if (instruction.mnemonic == "bgt")
     {
-      int disp = getDisplacement(instruction.operand, instruction.operand_type);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned disp = getDisplacement(instruction.operand, instruction.operand_type);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWordDisp(3, 11, 15, regB, regC, disp);
     }
     if (instruction.mnemonic == "push")
     {
-      int regC = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg1);
       outputWord(8, 1, 14, 0, regC, 0, 0, 4);
     }
     if (instruction.mnemonic == "pop")
     {
-      int regA = getGprIndex(instruction.reg1);
+      unsigned regA = getGprIndex(instruction.reg1);
       outputWord(9, 3, regA, 14, 0, 0, 0, 4);
     }
     if (instruction.mnemonic == "xchg")
     {
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(4, 0, 0, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "add")
     {
-      int regA = getGprIndex(instruction.reg2);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(5, 0, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "sub")
     {
-      int regA = getGprIndex(instruction.reg2);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(5, 1, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "mul")
     {
-      int regA = getGprIndex(instruction.reg2);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(5, 2, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "div")
     {
-      int regA = getGprIndex(instruction.reg2);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(5, 3, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "not")
     {
-      int regA = getGprIndex(instruction.reg1);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = 0;
+      unsigned regA = getGprIndex(instruction.reg1);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = 0;
       outputWord(6, 0, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "and")
     {
-      int regA = getGprIndex(instruction.reg2);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(6, 1, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "or")
     {
-      int regA = getGprIndex(instruction.reg2);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(6, 2, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "xor")
     {
-      int regA = getGprIndex(instruction.reg2);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(6, 3, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "shl")
     {
-      int regA = getGprIndex(instruction.reg2);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(7, 0, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "shr")
     {
-      int regA = getGprIndex(instruction.reg2);
-      int regB = getGprIndex(instruction.reg1);
-      int regC = getGprIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg2);
+      unsigned regB = getGprIndex(instruction.reg1);
+      unsigned regC = getGprIndex(instruction.reg2);
       outputWord(7, 1, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "ld")
@@ -546,31 +558,31 @@ namespace assembler
       if (instruction.operand_type == "num" || instruction.operand_type == "sym" ||
           instruction.operand_type == "mem[num]" || instruction.operand_type == "mem[sym]")
       {
-        int disp = getDisplacement(instruction.operand, instruction.operand_type);
-        int regA = getGprIndex(instruction.reg1);
+        unsigned disp = getDisplacement(instruction.operand, instruction.operand_type);
+        unsigned regA = getGprIndex(instruction.reg1);
         outputWordDisp(9, 2, regA, 15, 0, disp);
       }
       if (instruction.operand_type == "mem[num]" || instruction.operand_type == "mem[sym]")
       {
-        int regA = getGprIndex(instruction.reg1);
+        unsigned regA = getGprIndex(instruction.reg1);
         outputWord(9, 2, regA, regA, 0, 0, 0, 0);
       }
       if (instruction.operand_type == "mem[reg]")
       {
-        int regA = getGprIndex(instruction.reg1);
-        int regB = getGprIndex(instruction.operand);
+        unsigned regA = getGprIndex(instruction.reg1);
+        unsigned regB = getGprIndex(instruction.operand);
         outputWord(9, 2, regA, regB, 0, 0, 0, 0);
       }
       if (instruction.operand_type == "mem[reg+num]")
       {
-        if (stringToInt(instruction.offset) > 4095)
+        if (stringToSignedInt(instruction.offset) > 2047 || stringToSignedInt(instruction.offset) < -2048)
         {
-          std::cout << "Error. Maximum allowed offset is 0xFFF" << std::endl;
+          std::cout << "Error. Signed offset out of range" << std::endl;
           exit(1);
         }
-        int regA = getGprIndex(instruction.reg1);
-        int regB = getGprIndex(instruction.operand);
-        int disp = stringToInt(instruction.offset);
+        unsigned regA = getGprIndex(instruction.reg1);
+        unsigned regB = getGprIndex(instruction.operand);
+        int disp = stringToSignedInt(instruction.offset);
         outputWordDisp(9, 2, regA, regB, 0, disp);
       }
     }
@@ -578,39 +590,39 @@ namespace assembler
     {
       if (instruction.operand_type == "mem[num]" || instruction.operand_type == "mem[sym]")
       {
-        int disp = getDisplacement(instruction.operand, instruction.operand_type);
-        int regC = getGprIndex(instruction.reg1);
+        unsigned disp = getDisplacement(instruction.operand, instruction.operand_type);
+        unsigned regC = getGprIndex(instruction.reg1);
         outputWordDisp(8, 2, 15, 0, regC, disp);
       }
       if (instruction.operand_type == "mem[reg]")
       {
-        int regC = getGprIndex(instruction.reg1);
-        int regA = getGprIndex(instruction.operand);
+        unsigned regC = getGprIndex(instruction.reg1);
+        unsigned regA = getGprIndex(instruction.operand);
         outputWord(8, 0, regA, 0, regC, 0, 0, 0);
       }
       if (instruction.operand_type == "mem[reg+num]")
       {
-        if (stringToInt(instruction.offset) > 4095)
+        if (stringToSignedInt(instruction.offset) > 2047 || stringToSignedInt(instruction.offset) < -2048)
         {
-          std::cout << "Error. Maximum allowed offset is 0xFFF" << std::endl;
+          std::cout << "Error. Signed offset out of range" << std::endl;
           exit(1);
         }
-        int regC = getGprIndex(instruction.reg1);
-        int regA = getGprIndex(instruction.operand);
-        int disp = stringToInt(instruction.offset);
+        unsigned regC = getGprIndex(instruction.reg1);
+        unsigned regA = getGprIndex(instruction.operand);
+        int disp = stringToSignedInt(instruction.offset);
         outputWordDisp(8, 0, regA, 0, regC, disp);
       }
     }
     if (instruction.mnemonic == "csrrd")
     {
-      int regA = getCsrIndex(instruction.reg1);
-      int regB = getGprIndex(instruction.reg2);
+      unsigned regA = getCsrIndex(instruction.reg1);
+      unsigned regB = getGprIndex(instruction.reg2);
       outputWord(9, 4, regA, regB, 0, 0, 0, 0);
     }
     if (instruction.mnemonic == "csrwr")
     {
-      int regA = getGprIndex(instruction.reg1);
-      int regB = getCsrIndex(instruction.reg2);
+      unsigned regA = getGprIndex(instruction.reg1);
+      unsigned regB = getCsrIndex(instruction.reg2);
       outputWord(9, 0, regA, regB, 0, 0, 0, 0);
     }
   }
