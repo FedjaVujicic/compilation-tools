@@ -3,6 +3,8 @@
 #include <vector>
 #include <unordered_map>
 #include "../inc/linker.hpp"
+#include "../inc/symbol.hpp"
+#include "../inc/relocation.hpp"
 
 namespace linker
 {
@@ -11,6 +13,13 @@ namespace linker
   std::unordered_map<std::string, unsigned> placeSections;
   bool isHex = false;
   bool isRelocatable = false;
+
+  // Za cuvanje podataka iz tabele simbola
+  std::unordered_map<std::string, Symbol> symbolTable;
+  // Za cuvanje podataka iz memorije, za svaku sekciju specificno
+  std::unordered_map<std::string, std::vector<short>> sectionContent;
+  // Za cuvanje podataka iz relokacionih tabela
+  std::unordered_map<std::string, std::vector<Relocation>> relocationTable;
 
   void setHex()
   {
@@ -50,8 +59,14 @@ namespace linker
     placeSections[sectionName] = sectionAddress;
   }
 
+  void parseObjectFile()
+  {
+    
+  }
+
   void link()
   {
+    parseObjectFile();
   }
 
 }

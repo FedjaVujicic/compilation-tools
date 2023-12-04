@@ -54,11 +54,6 @@ int main(int argc, char **argv)
         std::cout << "Error. No output file specified." << std::endl;
         exit(1);
       }
-      if (i == argc - 1)
-      {
-        std::cout << "Error. No input files specified." << std::endl;
-        exit(1);
-      }
       for (; i < argc; ++i)
       {
         std::string arg = argv[i];

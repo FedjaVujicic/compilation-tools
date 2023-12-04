@@ -753,7 +753,6 @@ namespace assembler
     literalPoolFirstPass();
     locationCounter = 0;
     currentSection = "ABS";
-    outputLiteralPool();
   }
 
   void secondPass()
