@@ -140,7 +140,7 @@ namespace assembler
 
   void addRelocationWordDirective(std::string symbolName)
   {
-    unsigned relOffset = locationCounter;
+    unsigned relOffset = locationCounter - sectionTable[currentSection].base;
     unsigned relAddend = 0;
     std::string relSymbolName;
     if (symbolTable[symbolName].scope == ScopeType::LOCAL)
@@ -228,7 +228,7 @@ namespace assembler
       {
         continue;
       }
-      num.second = locationCounter;
+      num.second = locationCounter - sectionTable[currentSection].base;
       locationCounter += 4;
     }
     for (auto &sym : literalSymTable)
@@ -237,7 +237,7 @@ namespace assembler
       {
         continue;
       }
-      sym.second = locationCounter;
+      sym.second = locationCounter - sectionTable[currentSection].base;
       locationCounter += 4;
     }
   }
@@ -730,6 +730,22 @@ namespace assembler
     }
   }
 
+  void outputLiteralPool()
+  {
+    for (const auto& num : literalNumTable)
+    {
+      std::cout << "Section(" << num.first.first << ") ";
+      std::cout << "Literal(" << num.first.second << ") ";
+      std::cout << "Address(" << num.second << ") " << std::endl;
+    }
+    for (const auto& sym : literalSymTable)
+    {
+      std::cout << "Section(" << sym.first.first << ") ";
+      std::cout << "Literal(" << sym.first.second << ") ";
+      std::cout << "Address(" << sym.second << ") " << std::endl;
+    }
+  }
+
   void firstPass()
   {
     yyin = inputFile;
@@ -737,6 +753,7 @@ namespace assembler
     literalPoolFirstPass();
     locationCounter = 0;
     currentSection = "ABS";
+    outputLiteralPool();
   }
 
   void secondPass()
