@@ -33,7 +33,7 @@ namespace linker
 
   void setIOFiles(std::string outputFileName, std::vector<std::string> inputFileNames)
   {
-    for (const auto& inputFileName : inputFileNames)
+    for (const auto &inputFileName : inputFileNames)
     {
       std::ifstream inputFile;
       inputFile.open(inputFileName);
@@ -51,7 +51,6 @@ namespace linker
       std::cout << "Error opening output file." << std::endl;
       return;
     }
-
   }
 
   void addPlaceSection(std::string sectionName, unsigned sectionAddress)
@@ -59,14 +58,89 @@ namespace linker
     placeSections[sectionName] = sectionAddress;
   }
 
-  void parseObjectFile()
+  void outputSymbolTable()
   {
-    
+    for (const auto &sym : symbolTable)
+    {
+      std::cout << "Value(" << sym.second.value << ") "
+                << "Size(" << sym.second.size << ") "
+                << "Type(" << SymbolTypeToString(sym.second.type) << ") "
+                << "Scope(" << ScopeTypeToString(sym.second.scope) << ") "
+                << "Section(" << sym.second.section << ") "
+                << "Name(" << sym.first << ")" << std::endl;
+    }
+  }
+
+  void parseInputFiles()
+  {
+    for (auto &inputFile : inputFiles)
+    {
+      int i = 0;
+      std::string currentWord = "";
+      while (currentWord != "Name")
+      {
+        inputFile >> currentWord;
+      }
+      // Parse symbol table
+      while (true)
+      {
+        unsigned value;
+        short size;
+        SymbolType type;
+        ScopeType scope;
+        std::string section;
+        std::string name;
+
+        // value
+        inputFile >> currentWord;
+        if (currentWord.substr(0, 2) == "#.")
+        {
+          break;
+        }
+        value = std::stoul(currentWord, nullptr, 16);
+
+        // size
+        inputFile >> currentWord;
+        size = stoi(currentWord);
+
+        // type
+        inputFile >> currentWord;
+        if (currentWord == "NOTYPE")
+        {
+          type = SymbolType::NOTYPE;
+        }
+        else if (currentWord == "SECTION")
+        {
+          type = SymbolType::SECTION;
+        }
+
+        // scope
+        inputFile >> currentWord;
+        if (currentWord == "GLOBAL")
+        {
+          scope = ScopeType::GLOBAL;
+        }
+        else if (currentWord == "LOCAL")
+        {
+          scope = ScopeType::LOCAL;
+        }
+
+        // section
+        inputFile >> currentWord;
+        section = currentWord;
+
+        // name
+        inputFile >> currentWord;
+        name = currentWord;
+
+        symbolTable[name] = {value, size, type, scope, section};
+      }
+    }
   }
 
   void link()
   {
-    parseObjectFile();
+    parseInputFiles();
   }
 
 }

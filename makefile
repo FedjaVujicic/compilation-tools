@@ -10,7 +10,7 @@ compile_as:
 	g++ -o asembler misc/lexer.cpp misc/parser.cpp src/assembler.cpp src/assembler_main.cpp src/symbol.cpp
 
 compile_lk:
-	g++ -o linker src/linker.cpp src/linker_main.cpp
+	g++ -o linker src/linker.cpp src/linker_main.cpp src/symbol.cpp
 
 clean:
 	rm misc/lexer.cpp misc/parser.cpp misc/parser.hpp asembler linker *.o *.hex
