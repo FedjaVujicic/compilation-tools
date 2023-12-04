@@ -5,33 +5,12 @@
 #include <unordered_map>
 #include "../inc/linker.hpp"
 
-void printParsedArguments(std::vector<std::string> inputFileNames, std::string outputFileName, std::unordered_map<std::string, unsigned> placeSections)
-{
-
-  std::cout << "Output File: " << outputFileName << std::endl;
-  std::cout << "Input Files: ";
-  for (const auto &file : inputFileNames)
-  {
-    std::cout << file << " ";
-  }
-  std::cout << std::endl;
-  std::cout << std::endl;
-  std::cout << "Place Sections: " << std::endl;
-  for (const auto &section : placeSections)
-  {
-    std::cout << "Section(" << section.first << ") "
-              << "Address(" << section.second << ")" << std::endl;
-  }
-}
 
 int main(int argc, char **argv)
 {
 
   std::vector<std::string> inputFileNames;
   std::string outputFileName;
-  std::unordered_map<std::string, unsigned> placeSections;
-  bool isHex = false;
-  bool isRelocatable = false;
 
   if (argc < 4)
   {
@@ -58,15 +37,15 @@ int main(int argc, char **argv)
       // not checking for errors
       std::string sectionName = arg.substr(7, pos - 7);
       unsigned sectionAddress = std::stoul(arg.substr(pos + 1, std::string::npos), nullptr, 16);
-      placeSections[sectionName] = sectionAddress;
+      linker::addPlaceSection(sectionName, sectionAddress);
     }
     else if (arg == "-hex")
     {
-      isHex = true;
+      linker::setHex();
     }
     else if (arg == "-relocatable")
     {
-      isRelocatable = true;
+      linker::setRelocatable();
     }
     else
     {
@@ -102,6 +81,9 @@ int main(int argc, char **argv)
     std::cout << "Error. No input files specified." << std::endl;
     exit(1);
   }
+
+  linker::setIOFiles(outputFileName, inputFileNames);
+  linker::link();
 
   return 0;
 }

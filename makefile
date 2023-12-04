@@ -13,4 +13,4 @@ compile_lk:
 	g++ -o linker src/linker.cpp src/linker_main.cpp
 
 clean:
-	rm misc/lexer.cpp misc/parser.cpp misc/parser.hpp asembler linker *.o
+	rm misc/lexer.cpp misc/parser.cpp misc/parser.hpp asembler linker *.o *.hex
