@@ -159,10 +159,10 @@ namespace assembler
 
   void outputByte(unsigned byteHigh, unsigned byteLow)
   {
-    if (!(locationCounter % 8))
-    {
-      outputFile << std::dec << std::setw(4) << std::right << std::setfill('0') << locationCounter << ": ";
-    }
+    // if (!(locationCounter % 8))
+    // {
+    //   outputFile << std::dec << std::setw(4) << std::right << std::setfill('0') << locationCounter << ": ";
+    // }
     outputFile << std::setw(1) << std::left << std::setfill(' ') << std::hex << byteHigh;
     outputFile << std::setw(2) << std::left << std::setfill(' ') << std::hex << byteLow;
     locationCounter += 1;

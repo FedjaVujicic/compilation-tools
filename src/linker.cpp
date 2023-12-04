@@ -71,6 +71,22 @@ namespace linker
     }
   }
 
+  void outputSections()
+  {
+    for (const auto& sec : sectionContent)
+    {
+      std::cout << sec.first << std::endl;
+      int i = 0;
+      for (const auto& mem : sec.second)
+      {
+        std::cout << mem << " ";
+        ++i;
+        if (!(i % 8)) std::cout << std::endl;
+      }
+      std::cout << std::endl;
+    }
+  }
+
   void parseInputFiles()
   {
     for (auto &inputFile : inputFiles)
@@ -135,6 +151,28 @@ namespace linker
 
         symbolTable[name] = {value, size, type, scope, section};
       }
+      
+
+      // Parse memory content
+      while (true)
+      {
+        if (currentWord.substr(0, 7) == "#.rela.")
+        {
+          break;
+        }
+        std::string sectionName = currentWord.substr(2, std::string::npos);
+        std::vector<short> sectionMem;
+        inputFile >> currentWord;
+        while (currentWord[0] != '#')
+        {
+          sectionMem.push_back(stoul(currentWord, nullptr, 16));
+          inputFile >> currentWord;
+        }
+        sectionContent[sectionName] = sectionMem;
+      }
+
+      outputSections();
+      std::cout << currentWord << std::endl;
     }
   }
 
