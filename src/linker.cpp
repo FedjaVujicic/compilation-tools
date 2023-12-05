@@ -14,11 +14,8 @@ namespace linker
   bool isHex = false;
   bool isRelocatable = false;
 
-  // Za cuvanje podataka iz tabele simbola
   std::unordered_map<std::string, Symbol> symbolTable;
-  // Za cuvanje podataka iz memorije, za svaku sekciju specificno
   std::unordered_map<std::string, std::vector<short>> sectionContent;
-  // Za cuvanje podataka iz relokacionih tabela
   std::unordered_map<std::string, std::vector<Relocation>> relocationTable;
 
   void setHex()
@@ -73,17 +70,32 @@ namespace linker
 
   void outputSections()
   {
-    for (const auto& sec : sectionContent)
+    for (const auto &sec : sectionContent)
     {
       std::cout << sec.first << std::endl;
       int i = 0;
-      for (const auto& mem : sec.second)
+      for (const auto &mem : sec.second)
       {
         std::cout << mem << " ";
         ++i;
-        if (!(i % 8)) std::cout << std::endl;
+        if (!(i % 8))
+          std::cout << std::endl;
       }
       std::cout << std::endl;
+    }
+  }
+
+  void outputRelocationTables()
+  {
+    for (const auto &relT : relocationTable)
+    {
+      std::cout << "rela." << relT.first << std::endl;
+      for (const auto &rel : relT.second)
+      {
+        std::cout << "Offset(" << rel.offset << ") "
+                  << "Symbol(" << rel.symbolName << ") "
+                  << "Addend(" << rel.addend << ")" << std::endl;
+      }
     }
   }
 
@@ -151,7 +163,6 @@ namespace linker
 
         symbolTable[name] = {value, size, type, scope, section};
       }
-      
 
       // Parse memory content
       while (true)
@@ -171,8 +182,38 @@ namespace linker
         sectionContent[sectionName] = sectionMem;
       }
 
-      outputSections();
-      std::cout << currentWord << std::endl;
+      // Parse relocation tables
+      while (!inputFile.eof())
+      {
+        std::string sectionName = currentWord.substr(7, std::string::npos);
+        inputFile >> currentWord; // Offset
+        inputFile >> currentWord; // Symbol
+        inputFile >> currentWord; // Addend
+
+        while (inputFile >> currentWord)
+        {
+          // Read section relocation data
+          if (currentWord.substr(0, 2) == "#.")
+          {
+            break;
+          }
+
+          unsigned offset;
+          std::string symbolName;
+          unsigned addend;
+
+          offset = stoul(currentWord, nullptr, 16);
+
+          inputFile >> currentWord;
+          symbolName = currentWord;
+
+          inputFile >> currentWord;
+          addend = stoi(currentWord);
+
+          relocationTable[sectionName].push_back({offset, symbolName, addend});
+        }
+      }
+      
     }
   }
 

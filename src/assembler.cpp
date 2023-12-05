@@ -694,17 +694,17 @@ namespace assembler
       {
         continue;
       }
+      outputFile << std::endl;
       outputFile << "#.rela." << section.first << std::endl;
       outputFile << std::setw(10) << std::left << std::setfill(' ') << "Offset";
       outputFile << std::setw(20) << std::left << std::setfill(' ') << "Symbol";
       outputFile << std::setw(10) << std::left << std::setfill(' ') << "Addend";
-      outputFile << std::endl;
       for (const auto &rel : relocationTable[section.first])
       {
+        outputFile << std::endl;
         outputFile << std::setw(8) << std::right << std::setfill('0') << std::hex << rel.offset << "  ";
         outputFile << std::setw(20) << std::left << std::setfill(' ') << rel.symbolName;
         outputFile << std::setw(10) << std::left << std::setfill(' ') << std::dec << rel.addend;
-        outputFile << std::endl;
       }
     }
   }
