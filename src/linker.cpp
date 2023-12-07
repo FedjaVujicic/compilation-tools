@@ -5,6 +5,7 @@
 #include "../inc/linker.hpp"
 #include "../inc/symbol.hpp"
 #include "../inc/relocation.hpp"
+#include "../inc/section_info.hpp"
 
 namespace linker
 {
@@ -15,8 +16,9 @@ namespace linker
   bool isRelocatable = false;
 
   std::unordered_map<std::string, Symbol> symbolTable;
-  std::unordered_map<std::string, std::vector<uint16_t>> sectionContent;
-  std::unordered_map<std::string, std::vector<Relocation>> relocationTable;
+  std::unordered_map<std::string, std::vector<Relocation>> sectionRelTables;
+
+  std::unordered_map<std::string, SectionInfo> sections;
 
   void setHex()
   {
@@ -57,24 +59,33 @@ namespace linker
 
   void outputSymbolTable()
   {
-    for (const auto &sym : symbolTable)
+    outputFile << "#.symtab" << std::endl;
+    outputFile << std::setw(10) << std::left << std::setfill(' ') << "Value";
+    outputFile << std::setw(10) << std::left << std::setfill(' ') << "Size";
+    outputFile << std::setw(10) << std::left << std::setfill(' ') << "Type";
+    outputFile << std::setw(10) << std::left << std::setfill(' ') << "Scope";
+    outputFile << std::setw(20) << std::left << std::setfill(' ') << "Section";
+    outputFile << std::setw(20) << std::left << std::setfill(' ') << "Name";
+    outputFile << std::endl;
+    for (const auto &symbol : symbolTable)
     {
-      std::cout << "Value(" << sym.second.value << ") "
-                << "Size(" << sym.second.size << ") "
-                << "Type(" << SymbolTypeToString(sym.second.type) << ") "
-                << "Scope(" << ScopeTypeToString(sym.second.scope) << ") "
-                << "Section(" << sym.second.section << ") "
-                << "Name(" << sym.first << ")" << std::endl;
+      outputFile << std::setw(8) << std::right << std::setfill('0') << std::hex << symbol.second.value << "  ";
+      outputFile << std::setw(10) << std::left << std::setfill(' ') << symbol.second.size;
+      outputFile << std::setw(10) << std::left << std::setfill(' ') << SymbolTypeToString(symbol.second.type);
+      outputFile << std::setw(10) << std::left << std::setfill(' ') << ScopeTypeToString(symbol.second.scope);
+      outputFile << std::setw(20) << std::left << std::setfill(' ') << symbol.second.section;
+      outputFile << std::setw(20) << std::left << std::setfill(' ') << symbol.first;
+      outputFile << std::endl;
     }
   }
 
-  void outputSections()
+  void printSections()
   {
-    for (const auto &sec : sectionContent)
+    for (const auto &sec : sections)
     {
       std::cout << sec.first << std::endl;
       uint16_t i = 0;
-      for (const auto &mem : sec.second)
+      for (const auto &mem : sec.second.data)
       {
         std::cout << mem << " ";
         ++i;
@@ -85,9 +96,9 @@ namespace linker
     }
   }
 
-  void outputRelocationTables()
+  void printSectionRelTables()
   {
-    for (const auto &relT : relocationTable)
+    for (const auto &relT : sectionRelTables)
     {
       std::cout << "rela." << relT.first << std::endl;
       for (const auto &rel : relT.second)
@@ -96,6 +107,24 @@ namespace linker
                   << "Symbol(" << rel.symbolName << ") "
                   << "Addend(" << rel.addend << ")" << std::endl;
       }
+    }
+  }
+
+  void addSymbol(uint32_t value, uint16_t size, SymbolType type, ScopeType scope, std::string section, std::string name)
+  {
+    if (symbolTable.count(name) == 0)
+    {
+      symbolTable[name] = {value, size, type, scope, section};
+      return;
+    }
+    if (symbolTable[name].section != "UND" && section != "UND")
+    {
+      std::cout << "Linker error. Symbol " << name << " redefinition." << std::endl;
+      exit(1);
+    }
+    if (symbolTable[name].section == "UND" && section != "UND")
+    {
+      symbolTable[name] = {value, size, type, scope, section};
     }
   }
 
@@ -161,7 +190,7 @@ namespace linker
         inputFile >> currentWord;
         name = currentWord;
 
-        symbolTable[name] = {value, size, type, scope, section};
+        addSymbol(value, size, type, scope, section, name);
       }
 
       // Parse memory content
@@ -172,14 +201,13 @@ namespace linker
           break;
         }
         std::string sectionName = currentWord.substr(2, std::string::npos);
-        std::vector<uint16_t> sectionMem;
         inputFile >> currentWord;
         while (currentWord[0] != '#')
         {
-          sectionMem.push_back(stoul(currentWord, nullptr, 16));
+          sections[sectionName].data.push_back(stoul(currentWord, nullptr, 16));
           inputFile >> currentWord;
         }
-        sectionContent[sectionName] = sectionMem;
+        sections[sectionName].size = sections[sectionName].data.size();
       }
 
       // Parse relocation tables
@@ -210,16 +238,18 @@ namespace linker
           inputFile >> currentWord;
           addend = stoi(currentWord);
 
-          relocationTable[sectionName].push_back({offset, symbolName, addend});
+          sectionRelTables[sectionName].push_back({offset, symbolName, addend});
         }
       }
-      
     }
   }
 
   void link()
   {
     parseInputFiles();
+    outputSymbolTable();
+    // printSections();
+    // printSectionRelTables();
   }
 
 }
