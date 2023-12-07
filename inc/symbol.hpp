@@ -2,6 +2,7 @@
 #define _SYMBOL_HPP_
 
 #include <iostream>
+#include <cstdint>
 
 enum class SymbolType
 {
@@ -19,8 +20,8 @@ std::string ScopeTypeToString(ScopeType st);
 
 struct Symbol
 {
-  unsigned value;
-  short size;
+  uint32_t value;
+  uint16_t size;
   SymbolType type;
   ScopeType scope;
   std::string section;

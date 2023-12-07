@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <cstdint>
 #include "../misc/parser_data.hpp"
 
 

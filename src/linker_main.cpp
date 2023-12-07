@@ -36,7 +36,7 @@ int main(int argc, char **argv)
       std::string::size_type pos = arg.find('@');
       // not checking for errors
       std::string sectionName = arg.substr(7, pos - 7);
-      unsigned sectionAddress = std::stoul(arg.substr(pos + 1, std::string::npos), nullptr, 16);
+      uint32_t sectionAddress = std::stoul(arg.substr(pos + 1, std::string::npos), nullptr, 16);
       linker::addPlaceSection(sectionName, sectionAddress);
     }
     else if (arg == "-hex")

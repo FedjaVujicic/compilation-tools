@@ -2,11 +2,12 @@
 #define _SECTION_HPP_
 
 #include <iostream>
+#include <cstdint>
 
 struct Section
 {
-  unsigned base;
-  unsigned length;
+  uint32_t base;
+  uint32_t length;
 };
 
 

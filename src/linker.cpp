@@ -10,12 +10,12 @@ namespace linker
 {
   std::vector<std::ifstream> inputFiles;
   std::ofstream outputFile;
-  std::unordered_map<std::string, unsigned> placeSections;
+  std::unordered_map<std::string, uint32_t> placeSections;
   bool isHex = false;
   bool isRelocatable = false;
 
   std::unordered_map<std::string, Symbol> symbolTable;
-  std::unordered_map<std::string, std::vector<short>> sectionContent;
+  std::unordered_map<std::string, std::vector<uint16_t>> sectionContent;
   std::unordered_map<std::string, std::vector<Relocation>> relocationTable;
 
   void setHex()
@@ -50,7 +50,7 @@ namespace linker
     }
   }
 
-  void addPlaceSection(std::string sectionName, unsigned sectionAddress)
+  void addPlaceSection(std::string sectionName, uint32_t sectionAddress)
   {
     placeSections[sectionName] = sectionAddress;
   }
@@ -73,7 +73,7 @@ namespace linker
     for (const auto &sec : sectionContent)
     {
       std::cout << sec.first << std::endl;
-      int i = 0;
+      uint16_t i = 0;
       for (const auto &mem : sec.second)
       {
         std::cout << mem << " ";
@@ -103,7 +103,7 @@ namespace linker
   {
     for (auto &inputFile : inputFiles)
     {
-      int i = 0;
+      uint32_t i = 0;
       std::string currentWord = "";
       while (currentWord != "Name")
       {
@@ -112,8 +112,8 @@ namespace linker
       // Parse symbol table
       while (true)
       {
-        unsigned value;
-        short size;
+        uint32_t value;
+        uint16_t size;
         SymbolType type;
         ScopeType scope;
         std::string section;
@@ -172,7 +172,7 @@ namespace linker
           break;
         }
         std::string sectionName = currentWord.substr(2, std::string::npos);
-        std::vector<short> sectionMem;
+        std::vector<uint16_t> sectionMem;
         inputFile >> currentWord;
         while (currentWord[0] != '#')
         {
@@ -198,9 +198,9 @@ namespace linker
             break;
           }
 
-          unsigned offset;
+          uint32_t offset;
           std::string symbolName;
-          unsigned addend;
+          uint32_t addend;
 
           offset = stoul(currentWord, nullptr, 16);
 

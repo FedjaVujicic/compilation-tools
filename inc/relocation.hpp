@@ -1,11 +1,14 @@
 #ifndef _RELOCATION_HPP_
 #define _RELOCATION_HPP_
 
+#include <iostream>
+#include <cstdint>
+
 struct Relocation
 {
-  unsigned offset;
+  uint32_t offset;
   std::string symbolName;
-  unsigned addend;
+  uint32_t addend;
 };
 
 #endif
