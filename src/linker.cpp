@@ -122,6 +122,11 @@ namespace linker
       std::cout << "Linker error. Symbol " << name << " redefinition." << std::endl;
       exit(1);
     }
+    if (scope == ScopeType::LOCAL || symbolTable[name].scope == ScopeType::LOCAL)
+    {
+      std::cout << "Linker error. Unresolved reference to " << name << std::endl;
+      exit(1);
+    }
     if (symbolTable[name].section == "UND" && section != "UND")
     {
       symbolTable[name] = {value, size, type, scope, section};

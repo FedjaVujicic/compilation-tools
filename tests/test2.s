@@ -1,3 +1,5 @@
+.global aezakmi
+
 .section code5
 halt
 aezakmi:
