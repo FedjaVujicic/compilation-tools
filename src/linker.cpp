@@ -19,6 +19,8 @@ namespace linker
   std::unordered_map<std::string, std::vector<Relocation>> relocationTables;
 
   std::unordered_map<std::string, SectionInfo> sections;
+  // For preserving the order in which the sections were parsed
+  std::vector<std::string> parsedSections;
 
   void setHex()
   {
@@ -83,7 +85,9 @@ namespace linker
   {
     for (const auto &sec : sections)
     {
-      std::cout << sec.first << std::endl;
+      std::cout << "section(" << sec.first << ") ";
+      std::cout << "address(" << std::hex << sec.second.address << ") ";
+      std::cout << "size(" << std::dec << sec.second.size << ")" << std::endl;
       uint16_t i = 0;
       for (const auto &mem : sec.second.data)
       {
@@ -227,7 +231,7 @@ namespace linker
 
         if (!sections.count(sectionName))
         {
-          sections[sectionName].num = sectionNum++;
+          parsedSections.push_back(sectionName);
         }
 
         inputFile >> currentWord;
@@ -282,16 +286,62 @@ namespace linker
           {
             addend += base;
           }
-                  
+
           relocationTables[sectionName].push_back({offset, symbolName, addend});
         }
       }
     }
   }
 
+  void mapSections()
+  {
+    uint32_t defaultAddress = 0;
+
+    // Placed sections
+    for (const auto &section : placeSections)
+    {
+      for (const auto& refSection : placeSections)
+      {
+        if (section.first == refSection.first)
+        {
+          continue;
+        }
+        if ((section.second <= refSection.second) && ((section.second + sections[section.first].size) > refSection.second))
+        {
+          std::cout << "Linker Error. Section collision." << std::endl;
+          exit(1);
+        }
+      }
+      sections[section.first].address = section.second;
+      
+      if (section.second + sections[section.first].size > defaultAddress)
+      {
+        defaultAddress = section.second + sections[section.first].size;
+      }
+    }
+
+    // Unplaced sections
+    for (const auto& sectionName : parsedSections)
+    {
+      if (placeSections.count(sectionName))
+      {
+        continue;
+      }
+      sections[sectionName].address = defaultAddress;
+      defaultAddress += sections[sectionName].size;
+    }
+
+    if (defaultAddress > 0xFFFFFF00)
+    {
+      std::cout << "Linker Error. Section collision with memory mapped registers." << std::endl;
+      exit(1);
+    }
+  }
+
   void link()
   {
     parseInputFiles();
+    mapSections();
     outputSymbolTable();
     // printSections();
     // printRelocationTables();

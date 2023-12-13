@@ -7,7 +7,6 @@
 
 struct SectionInfo
 {
-  uint16_t num;
   uint32_t address;
   uint32_t size;
   std::vector<uint16_t> data;
