@@ -6,6 +6,9 @@
 #include "../inc/linker.hpp"
 
 
+bool linker::isHex = false;
+bool linker::isRelocatable = false;
+
 int main(int argc, char **argv)
 {
 
@@ -41,10 +44,18 @@ int main(int argc, char **argv)
     }
     else if (arg == "-hex")
     {
+      if (linker::isRelocatable)
+      {
+        std::cout << "Error. Only one of the -hex and -relocatable options can be specified." << std::endl;
+      }
       linker::setHex();
     }
     else if (arg == "-relocatable")
     {
+      if (linker::isHex)
+      {
+        std::cout << "Error. Only one of the -hex and -relocatable options can be specified." << std::endl;
+      }
       linker::setRelocatable();
     }
     else

@@ -12,8 +12,6 @@ namespace linker
   std::vector<std::ifstream> inputFiles;
   std::ofstream outputFile;
   std::unordered_map<std::string, uint32_t> placeSections;
-  bool isHex = false;
-  bool isRelocatable = false;
 
   std::unordered_map<std::string, Symbol> symbolTable;
   std::unordered_map<std::string, std::vector<Relocation>> relocationTables;

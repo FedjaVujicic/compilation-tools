@@ -6,6 +6,8 @@
 
 namespace linker
 {
+  extern bool isHex;
+  extern bool isRelocatable;
   void setHex();
   void setRelocatable();
   void setIOFiles(std::string outputFileName, std::vector<std::string> inputFileNames);
