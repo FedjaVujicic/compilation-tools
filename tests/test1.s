@@ -1,3 +1,5 @@
+.global qwer
+
 .section code1
 .word asdf
 halt
@@ -57,5 +59,11 @@ jmp 0xAAAA
 jmp 0xCCCC
 .word asdf
 .word aezakmi
+halt
+halt
+
+.section code5
+halt
+halt
 halt
 halt

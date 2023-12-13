@@ -16,7 +16,7 @@ namespace linker
   bool isRelocatable = false;
 
   std::unordered_map<std::string, Symbol> symbolTable;
-  std::unordered_map<std::string, std::vector<Relocation>> sectionRelTables;
+  std::unordered_map<std::string, std::vector<Relocation>> relocationTables;
 
   std::unordered_map<std::string, SectionInfo> sections;
 
@@ -96,9 +96,9 @@ namespace linker
     }
   }
 
-  void printSectionRelTables()
+  void printRelocationTables()
   {
-    for (const auto &relT : sectionRelTables)
+    for (const auto &relT : relocationTables)
     {
       std::cout << "rela." << relT.first << std::endl;
       for (const auto &rel : relT.second)
@@ -115,6 +115,10 @@ namespace linker
     if (symbolTable.count(name) == 0)
     {
       symbolTable[name] = {value, size, type, scope, section};
+      return;
+    }
+    if (type == SymbolType::SECTION)
+    {
       return;
     }
     if (symbolTable[name].section != "UND" && section != "UND")
@@ -135,10 +139,13 @@ namespace linker
 
   void parseInputFiles()
   {
+    uint16_t sectionNum = 0;
+
     for (auto &inputFile : inputFiles)
     {
       uint32_t i = 0;
       std::string currentWord = "";
+
       while (currentWord != "Name")
       {
         inputFile >> currentWord;
@@ -191,6 +198,17 @@ namespace linker
         inputFile >> currentWord;
         section = currentWord;
 
+        // Section merging update
+        if (sections.count(section) > 0 && type != SymbolType::SECTION)
+        {
+          if (section == "UND")
+          {
+            std::cout << "Sections entry created for UND" << std::endl;
+            exit(1);
+          }
+          value += sections[section].size;
+        }
+
         // name
         inputFile >> currentWord;
         name = currentWord;
@@ -206,13 +224,18 @@ namespace linker
           break;
         }
         std::string sectionName = currentWord.substr(2, std::string::npos);
+
+        if (!sections.count(sectionName))
+        {
+          sections[sectionName].num = sectionNum++;
+        }
+
         inputFile >> currentWord;
         while (currentWord[0] != '#')
         {
           sections[sectionName].data.push_back(stoul(currentWord, nullptr, 16));
           inputFile >> currentWord;
         }
-        sections[sectionName].size = sections[sectionName].data.size();
       }
 
       // Parse relocation tables
@@ -222,6 +245,18 @@ namespace linker
         inputFile >> currentWord; // Offset
         inputFile >> currentWord; // Symbol
         inputFile >> currentWord; // Addend
+
+        uint32_t base = 0;
+
+        // Section merging update
+        if (relocationTables.count(sectionName))
+        {
+          base += sections[sectionName].size;
+        }
+        sections[sectionName].size = sections[sectionName].data.size();
+
+        // Create a relocation tables entry in case it's empty
+        relocationTables[sectionName];
 
         while (inputFile >> currentWord)
         {
@@ -236,14 +271,19 @@ namespace linker
           uint32_t addend;
 
           offset = stoul(currentWord, nullptr, 16);
+          offset += base;
 
           inputFile >> currentWord;
           symbolName = currentWord;
 
           inputFile >> currentWord;
           addend = stoi(currentWord);
-
-          sectionRelTables[sectionName].push_back({offset, symbolName, addend});
+          if (symbolTable[symbolName].scope == ScopeType::LOCAL)
+          {
+            addend += base;
+          }
+                  
+          relocationTables[sectionName].push_back({offset, symbolName, addend});
         }
       }
     }
@@ -254,7 +294,7 @@ namespace linker
     parseInputFiles();
     outputSymbolTable();
     // printSections();
-    // printSectionRelTables();
+    // printRelocationTables();
   }
 
 }
