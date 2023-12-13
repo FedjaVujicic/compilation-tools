@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include "../inc/linker.hpp"
 #include "../inc/symbol.hpp"
 #include "../inc/relocation.hpp"
@@ -19,6 +20,8 @@ namespace linker
   std::unordered_map<std::string, SectionInfo> sections;
   // For preserving the order in which the sections were parsed
   std::vector<std::string> parsedSections;
+
+  std::map<uint32_t, uint16_t> mem;
 
   void setHex()
   {
@@ -353,14 +356,75 @@ namespace linker
     }
   }
 
+  void resolveReferences()
+  {
+    for (const auto &sectionRel : relocationTables)
+    {
+      std::string sectionName = sectionRel.first;
+      for (const auto &rel : sectionRel.second)
+      {
+        uint32_t value = symbolTable[rel.symbolName].value + rel.addend;
+        uint16_t byte4 = (value & 0xFF000000) >> 24;
+        uint16_t byte3 = (value & 0x00FF0000) >> 16;
+        uint16_t byte2 = (value & 0x0000FF00) >> 8;
+        uint16_t byte1 = (value & 0x000000FF);
+        sections[sectionName].data[rel.offset] = byte1;
+        sections[sectionName].data[rel.offset + 1] = byte2;
+        sections[sectionName].data[rel.offset + 2] = byte3;
+        sections[sectionName].data[rel.offset + 3] = byte4;
+      }
+    }
+  }
+
+  void createMemoryContent()
+  {
+    for (const auto &section : sections)
+    {
+      uint32_t addr = section.second.address;
+      for (uint32_t offset = 0; offset < section.second.data.size(); ++offset)
+      {
+        mem[addr + offset] = section.second.data[offset];
+      }
+    }
+  }
+
+  void outputMemoryContent()
+  {
+    uint32_t cnt = 0;
+    for (const auto &memLoc : mem)
+    {
+      uint32_t addr = memLoc.first;
+      uint16_t byte = memLoc.second;
+
+      if (!(cnt % 8))
+      {
+        outputFile << std::endl
+                   << std::hex << addr << ": ";
+      }
+
+      outputFile << std::hex << std::setw(2) << std::setfill('0') << byte << " ";
+
+      if (!mem.count(addr + 1))
+      {
+        cnt = 0;
+        continue;
+      }
+      cnt++;
+    }
+  }
+
   void link()
   {
     parseInputFiles();
     mapSections();
     updateSymbolTable();
-    outputSymbolTable();
-    printSections();
-    printRelocationTables();
+    resolveReferences();
+    createMemoryContent();
+    outputMemoryContent();
+
+    // outputSymbolTable();
+    // printSections();
+    // printRelocationTables();
   }
 
 }
