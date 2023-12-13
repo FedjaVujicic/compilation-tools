@@ -81,15 +81,15 @@ namespace linker
 
   void printSections()
   {
-    for (const auto &sec : sections)
+    for (const auto &sectionName : parsedSections)
     {
-      std::cout << "section(" << sec.first << ") ";
-      std::cout << "address(" << std::hex << sec.second.address << ") ";
-      std::cout << "size(" << std::dec << sec.second.size << ")" << std::endl;
+      std::cout << "section(" << sectionName << ") ";
+      std::cout << "address(" << std::hex << sections[sectionName].address << ") ";
+      std::cout << "size(" << std::dec << sections[sectionName].size << ")" << std::endl;
       uint16_t i = 0;
-      for (const auto &mem : sec.second.data)
+      for (const auto &mem : sections[sectionName].data)
       {
-        std::cout << mem << " ";
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << mem << " ";
         ++i;
         if (!(i % 8))
           std::cout << std::endl;
@@ -105,9 +105,9 @@ namespace linker
       std::cout << "rela." << relT.first << std::endl;
       for (const auto &rel : relT.second)
       {
-        std::cout << "Offset(" << rel.offset << ") "
+        std::cout << "Offset(" << std::hex << rel.offset << ") "
                   << "Symbol(" << rel.symbolName << ") "
-                  << "Addend(" << rel.addend << ")" << std::endl;
+                  << "Addend(" << std::dec << rel.addend << ")" << std::endl;
       }
     }
   }
@@ -359,8 +359,8 @@ namespace linker
     mapSections();
     updateSymbolTable();
     outputSymbolTable();
-    // printSections();
-    // printRelocationTables();
+    printSections();
+    printRelocationTables();
   }
 
 }
