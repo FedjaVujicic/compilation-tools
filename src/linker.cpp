@@ -291,6 +291,15 @@ namespace linker
         }
       }
     }
+
+    for (const auto &symbol : symbolTable)
+    {
+      if (symbol.second.section == "UND")
+      {
+        std::cout << "Linker error. Unresolved reference to " << symbol.first << std::endl;
+        exit(1);
+      }
+    }
   }
 
   void mapSections()
@@ -300,7 +309,7 @@ namespace linker
     // Placed sections
     for (const auto &section : placeSections)
     {
-      for (const auto& refSection : placeSections)
+      for (const auto &refSection : placeSections)
       {
         if (section.first == refSection.first)
         {
@@ -313,7 +322,7 @@ namespace linker
         }
       }
       sections[section.first].address = section.second;
-      
+
       if (section.second + sections[section.first].size > defaultAddress)
       {
         defaultAddress = section.second + sections[section.first].size;
@@ -321,7 +330,7 @@ namespace linker
     }
 
     // Unplaced sections
-    for (const auto& sectionName : parsedSections)
+    for (const auto &sectionName : parsedSections)
     {
       if (placeSections.count(sectionName))
       {
@@ -338,10 +347,19 @@ namespace linker
     }
   }
 
+  void updateSymbolTable()
+  {
+    for (auto &symbol : symbolTable)
+    {
+      symbol.second.value += sections[symbol.second.section].address;
+    }
+  }
+
   void link()
   {
     parseInputFiles();
     mapSections();
+    updateSymbolTable();
     outputSymbolTable();
     // printSections();
     // printRelocationTables();

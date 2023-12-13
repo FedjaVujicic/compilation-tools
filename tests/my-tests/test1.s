@@ -67,3 +67,9 @@ halt
 halt
 halt
 halt
+
+function:
+halt
+
+label:
+halt
