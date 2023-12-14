@@ -14,6 +14,7 @@
   Instruction currentInstruction;
   std::vector<Line> parsedLines;
   Line currentLine;
+  bool stopParsing = false;
 
   void resetValues()
   {
@@ -39,8 +40,11 @@
     currentLine.type = "directive";
     currentLine.directive = currentDirective;
     currentLine.number = currentLineNumber;
-    parsedLines.push_back(currentLine);
-    assembler::handleLineFirstPass(currentLine);
+    if (!stopParsing)
+    {
+      parsedLines.push_back(currentLine);
+      assembler::handleLineFirstPass(currentLine);
+    }
     resetValues();
   }
 
@@ -49,8 +53,11 @@
     currentLine.type = "instruction"; 
     currentLine.instruction = currentInstruction; 
     currentLine.number = currentLineNumber;
-    parsedLines.push_back(currentLine);
-    assembler::handleLineFirstPass(currentLine);
+    if (!stopParsing)
+    {
+      parsedLines.push_back(currentLine);
+      assembler::handleLineFirstPass(currentLine);
+    }
     resetValues();
   }
 

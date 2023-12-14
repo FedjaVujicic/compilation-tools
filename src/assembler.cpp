@@ -11,6 +11,7 @@
 extern std::vector<Line> parsedLines;
 extern FILE *yyin;
 extern int yylineno;
+extern bool stopParsing;
 extern void printParsingStatus(int32_t parseStatus);
 extern void printParsingData();
 
@@ -313,6 +314,10 @@ namespace assembler
     if (directive.mnemonic == "ascii")
     {
       locationCounter += directive.argList[0].value.length();
+    }
+    if (directive.mnemonic == "end")
+    {
+      stopParsing = true;
     }
   }
 

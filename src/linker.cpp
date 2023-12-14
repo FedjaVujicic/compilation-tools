@@ -154,7 +154,6 @@ namespace linker
 
     for (auto &inputFile : inputFiles)
     {
-      uint32_t i = 0;
       std::string currentWord = "";
 
       while (currentWord != "Name")
@@ -173,7 +172,7 @@ namespace linker
 
         // value
         inputFile >> currentWord;
-        if (currentWord.substr(0, 2) == "#.")
+        if ((currentWord.substr(0, 2) == "#.") || inputFile.eof())
         {
           break;
         }
@@ -230,7 +229,7 @@ namespace linker
       // Parse memory content
       while (true)
       {
-        if (currentWord.substr(0, 7) == "#.rela.")
+        if ((currentWord.substr(0, 7) == "#.rela.") || inputFile.eof())
         {
           break;
         }
@@ -354,7 +353,7 @@ namespace linker
       }
       sections[sectionName].address = defaultAddress;
       defaultAddress += sections[sectionName].size;
-      
+
       if (defaultAddress > 0xFFFFFF00)
       {
         std::cout << "Linker Error (" << sectionName << ") Section collision with memory mapped registers." << std::endl;

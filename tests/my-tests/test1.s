@@ -73,3 +73,8 @@ halt
 
 label:
 halt
+
+.word 0xaaaaaaaa
+.word 0xbbbbbbbb
+.word label
+.word function
