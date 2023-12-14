@@ -128,14 +128,20 @@ namespace linker
     }
     if (symbolTable[name].section != "UND" && section != "UND")
     {
-      std::cout << "Linker error. Symbol " << name << " redefinition." << std::endl;
+      std::cout << "Linker error (" << section << ") Symbol " << name << " already defined in " << symbolTable[name].section << "." << std::endl;
       exit(1);
     }
-    if (scope == ScopeType::LOCAL || symbolTable[name].scope == ScopeType::LOCAL)
+    if (scope == ScopeType::LOCAL)
     {
       std::cout << "Linker error. Unresolved reference to " << name << std::endl;
       exit(1);
     }
+    if (symbolTable[name].scope == ScopeType::LOCAL)
+    {
+      std::cout << "Linker error. Unresolved reference to " << name << std::endl;
+      exit(1);
+    }
+
     if (symbolTable[name].section == "UND" && section != "UND")
     {
       symbolTable[name] = {value, size, type, scope, section};
@@ -318,7 +324,7 @@ namespace linker
         }
         if ((section.second <= refSection.second) && ((section.second + sections[section.first].size) > refSection.second))
         {
-          std::cout << "Linker Error. Section collision." << std::endl;
+          std::cout << "Linker error (" << section.first << ") Section overlap with " << refSection.first << "." << std::endl;
           exit(1);
         }
       }
@@ -327,6 +333,11 @@ namespace linker
       if (section.second + sections[section.first].size > defaultAddress)
       {
         defaultAddress = section.second + sections[section.first].size;
+      }
+      if (defaultAddress > 0xFFFFFF00)
+      {
+        std::cout << "Linker Error (" << section.first << ") Section collision with memory mapped registers." << std::endl;
+        exit(1);
       }
     }
 
@@ -339,12 +350,12 @@ namespace linker
       }
       sections[sectionName].address = defaultAddress;
       defaultAddress += sections[sectionName].size;
-    }
-
-    if (defaultAddress > 0xFFFFFF00)
-    {
-      std::cout << "Linker Error. Section collision with memory mapped registers." << std::endl;
-      exit(1);
+      
+      if (defaultAddress > 0xFFFFFF00)
+      {
+        std::cout << "Linker Error (" << sectionName << ") Section collision with memory mapped registers." << std::endl;
+        exit(1);
+      }
     }
   }
 
