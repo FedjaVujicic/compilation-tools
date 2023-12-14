@@ -316,6 +316,10 @@ namespace linker
     // Placed sections
     for (const auto &section : placeSections)
     {
+      if (!sections.count(section.first))
+      {
+        std::cout << "Linker Error. Undefined section " << section.first << "." << std::endl;
+      }
       for (const auto &refSection : placeSections)
       {
         if (section.first == refSection.first)
