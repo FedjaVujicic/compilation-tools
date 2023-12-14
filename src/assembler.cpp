@@ -81,7 +81,7 @@ namespace assembler
     if (!outputFile.is_open())
     {
       std::cout << "Error opening output file." << std::endl;
-      return;
+      exit(1);
     }
   }
 

@@ -1,4 +1,4 @@
-all: flex bison compile_as compile_lk
+all: flex bison compile_as compile_lk compile_em
 
 flex:
 	flex -o misc/lexer.cpp misc/lexer.l
@@ -12,5 +12,8 @@ compile_as:
 compile_lk:
 	g++ -o linker src/linker.cpp src/linker_main.cpp src/symbol.cpp
 
+compile_em:
+	g++ -o emulator src/emulator_main.cpp src/emulator.cpp
+
 clean:
-	rm misc/lexer.cpp misc/parser.cpp misc/parser.hpp assembler linker *.o *.hex
+	rm misc/lexer.cpp misc/parser.cpp misc/parser.hpp assembler linker emulator *.o *.hex
