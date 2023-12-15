@@ -11,7 +11,7 @@ int main(int argc, char** argv)
   std::string inputFileName = argv[1];
 
   emulator::setInputFile(inputFileName);  
-  emulator::emulate();
+  emulator::run();
 
   return 0;
 }

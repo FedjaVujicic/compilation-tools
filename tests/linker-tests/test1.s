@@ -2,7 +2,6 @@
 
 .section code1
 .word asdf
-halt
 int
 iret
 ret

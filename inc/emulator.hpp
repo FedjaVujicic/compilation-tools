@@ -6,7 +6,7 @@
 
 namespace emulator
 {
-  void emulate();
+  void run();
   void setInputFile(std::string inputFileName);
 };
 
