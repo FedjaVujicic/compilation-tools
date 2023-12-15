@@ -257,7 +257,11 @@ namespace emulator
     uint16_t regA = ((instruction & 0x00F00000) >> 20);
     uint16_t regB = ((instruction & 0x000F0000) >> 16);
     uint16_t regC = ((instruction & 0x0000F000) >> 12);
-    uint16_t disp = (instruction & 0x00000FFF);
+    int16_t disp = (instruction & 0x00000FFF);
+    if (disp & 0x0800)
+    {
+      disp |= 0xF000; // Set sign bits for negative numbers
+    }
     std::string csr;
 
     switch (mod)
@@ -276,7 +280,7 @@ namespace emulator
       break;
     case 0b0011:
       std::cout << "pop ";
-      std::cout << "%r" << std::dec << regA << std::endl;
+      std::cout << "%r" << std::dec << regA << "(" << disp << ")" << std::endl;
       break;
     case 0b0111:
       std::cout << "pop ";
@@ -295,7 +299,7 @@ namespace emulator
         csr = "ERROR_REG";
         break;
       }
-      std::cout << csr << std::endl;
+      std::cout << csr << "(" << disp << ")" << std::endl;
       break;
     case 0b0000:
       std::cout << "csrwr ";
@@ -336,6 +340,14 @@ namespace emulator
       }
       std::cout << "%" << csr << ", ";
       std::cout << "%r" << std::dec << regB << std::endl;
+      break;
+    case 0b0001:
+      std::cout << "%r" << regA << " = %r" << regB;
+      if (disp >= 0)
+      {
+        std::cout << " + ";
+      }
+      std::cout << disp << std::endl;
       break;
     default:
       std::cout << "Emulator error. Invalid opcode." << std::endl;

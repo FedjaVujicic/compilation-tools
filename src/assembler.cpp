@@ -155,7 +155,6 @@ namespace assembler
       relSymbolName = symbolName;
     }
     relocationTable[currentSection].push_back({relOffset, relSymbolName, relAddend});
-    
   }
 
   void outputByte(uint16_t byteHigh, uint16_t byteLow)
@@ -323,8 +322,11 @@ namespace assembler
 
   void handleInstructionFirstPass(Instruction instruction)
   {
-    if (instruction.mnemonic == "iret" ||
-        (instruction.mnemonic == "ld" && (instruction.operand_type == "mem[num]" || instruction.operand_type == "mem[sym]")))
+    if (instruction.mnemonic == "iret")
+    {
+      locationCounter += 8;
+    }
+    if (instruction.mnemonic == "ld" && (instruction.operand_type == "mem[num]" || instruction.operand_type == "mem[sym]"))
     {
       locationCounter += 4;
     }
@@ -471,8 +473,9 @@ namespace assembler
     }
     if (instruction.mnemonic == "iret")
     {
-      outputWord(9, 3, 15, 14, 0, 0, 0, 4);
-      outputWord(9, 7, 0, 14, 0, 0, 0, 4);
+      outputWord(9, 1, 14, 14, 0, 0, 0, 4); // sp = sp + 4
+      outputWord(9, 7, 0, 14, 0, 0xF, 0xF, 0xC); // pop status, sp = sp - 4
+      outputWord(9, 3, 15, 14, 0, 0, 0, 8); // pop pc, sp = sp + 8
     }
     if (instruction.mnemonic == "call")
     {
@@ -693,7 +696,7 @@ namespace assembler
 
   void outputRelocationTables()
   {
-    for (const auto& section : sectionTable)
+    for (const auto &section : sectionTable)
     {
       if (section.first == "ABS")
       {
@@ -737,13 +740,13 @@ namespace assembler
 
   void outputLiteralPool()
   {
-    for (const auto& num : literalNumTable)
+    for (const auto &num : literalNumTable)
     {
       std::cout << "Section(" << num.first.first << ") ";
       std::cout << "Literal(" << num.first.second << ") ";
       std::cout << "Address(" << num.second << ") " << std::endl;
     }
-    for (const auto& sym : literalSymTable)
+    for (const auto &sym : literalSymTable)
     {
       std::cout << "Section(" << sym.first.first << ") ";
       std::cout << "Literal(" << sym.first.second << ") ";
