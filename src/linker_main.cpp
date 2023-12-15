@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 
   if (argc < 4)
   {
-    std::cerr << "Error: Incorrect number of arguments." << std::endl;
+    std::cerr << "Error. Incorrect number of arguments." << std::endl;
     return 1;
   }
 
@@ -44,18 +44,10 @@ int main(int argc, char **argv)
     }
     else if (arg == "-hex")
     {
-      if (linker::isRelocatable)
-      {
-        std::cout << "Error. Only one of the -hex and -relocatable options can be specified." << std::endl;
-      }
       linker::setHex();
     }
     else if (arg == "-relocatable")
     {
-      if (linker::isHex)
-      {
-        std::cout << "Error. Only one of the -hex and -relocatable options can be specified." << std::endl;
-      }
       linker::setRelocatable();
     }
     else
@@ -85,6 +77,16 @@ int main(int argc, char **argv)
   if (inputFileNames.size() == 0)
   {
     std::cout << "Error. No input files specified." << std::endl;
+    exit(1);
+  }
+  if (linker::isHex && linker::isRelocatable)
+  {
+    std::cout << "Error. Only one of the -hex and -relocatable options can be specified." << std::endl;
+    exit(1);
+  }
+  if (!linker::isHex && !linker::isRelocatable)
+  {
+    std::cout << "Error. One of the -hex and -relocatable options must be specified." << std::endl;
     exit(1);
   }
 
