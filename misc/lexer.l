@@ -61,7 +61,7 @@ csrwr                       { return CSRWR; }
 \[                          { return '['; }
 \]                          { return ']'; }
 \+                          { return '+'; }
-#.*\n
+#.*(\n)*
 [ \r\t\n]
 .                           { std::cout << "LEXING ERROR" << std::endl; }
 

@@ -456,9 +456,9 @@ namespace assembler
   {
     if (type == "num" || type == "mem[num]")
     {
-      return literalNumTable[std::make_pair(currentSection, stringToUnsignedInt(operand))] - locationCounter;
+      return literalNumTable[std::make_pair(currentSection, stringToUnsignedInt(operand))] - locationCounter - 4;
     }
-    return literalSymTable[std::make_pair(currentSection, operand)] - locationCounter;
+    return literalSymTable[std::make_pair(currentSection, operand)] - locationCounter - 4;
   }
 
   void handleInstructionSecondPass(Instruction instruction)
@@ -660,15 +660,15 @@ namespace assembler
     }
     if (instruction.mnemonic == "csrrd")
     {
-      uint16_t regA = getCsrIndex(instruction.reg1);
-      uint16_t regB = getGprIndex(instruction.reg2);
-      outputWord(9, 4, regA, regB, 0, 0, 0, 0);
+      uint16_t regA = getGprIndex(instruction.reg2);
+      uint16_t regB = getCsrIndex(instruction.reg1);
+      outputWord(9, 0, regA, regB, 0, 0, 0, 0);
     }
     if (instruction.mnemonic == "csrwr")
     {
-      uint16_t regA = getGprIndex(instruction.reg1);
-      uint16_t regB = getCsrIndex(instruction.reg2);
-      outputWord(9, 0, regA, regB, 0, 0, 0, 0);
+      uint16_t regA = getCsrIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg1);
+      outputWord(9, 4, regA, regB, 0, 0, 0, 0);
     }
   }
 

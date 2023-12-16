@@ -1,3 +1,5 @@
+# Parsing test
+
 .section my_code
 
 my_start:

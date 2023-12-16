@@ -3,12 +3,19 @@
 #include <iomanip>
 #include <vector>
 
+#define SP r[14]
+#define PC r[15]
+
+#define STATUS csr[0]
+#define HANDLER csr[1]
+#define CAUSE csr[2]
+
 namespace emulator
 {
   std::ifstream inputFile;
   std::map<uint32_t, uint16_t> mem;
   std::vector<uint32_t> r(15);
-  uint32_t status, handler, cause;
+  std::vector<uint32_t> csr(3);
   bool stopEmulation = false;
 
   void setInputFile(std::string inputFileName)
@@ -45,16 +52,16 @@ namespace emulator
 
   uint32_t fetchInstruction()
   {
-    uint16_t byte1 = mem[r[15]];
-    uint16_t byte2 = mem[r[15] + 1];
-    uint16_t byte3 = mem[r[15] + 2];
-    uint16_t byte4 = mem[r[15] + 3];
+    uint16_t byte1 = mem[PC];
+    uint16_t byte2 = mem[PC + 1];
+    uint16_t byte3 = mem[PC + 2];
+    uint16_t byte4 = mem[PC + 3];
     uint32_t instruction = (byte4 << 24) | (byte3 << 16) | (byte2 << 8) | (byte1 << 0);
-    r[15] += 4;
+    PC += 4;
     return instruction;
   }
 
-  uint32_t fetchWord(uint32_t addr)
+  uint32_t readWord(uint32_t addr)
   {
     uint16_t byte1 = mem[addr];
     uint16_t byte2 = mem[addr + 1];
@@ -62,6 +69,18 @@ namespace emulator
     uint16_t byte4 = mem[addr + 3];
     uint32_t word = (byte4 << 24) | (byte3 << 16) | (byte2 << 8) | (byte1 << 0);
     return word;
+  }
+
+  void writeWord(uint32_t addr, uint32_t word)
+  {
+    uint16_t byte4 = (word & 0xFF000000) >> 24;
+    uint16_t byte3 = (word & 0x00FF00FF) >> 16;
+    uint16_t byte2 = (word & 0x0000FF00) >> 8;
+    uint16_t byte1 = (word & 0x000000FF) >> 0;
+    mem[addr] = byte1;
+    mem[addr + 1] = byte2;
+    mem[addr + 2] = byte3;
+    mem[addr + 3] = byte4;
   }
 
   void printInt()
@@ -80,11 +99,11 @@ namespace emulator
     {
     case 0b0001:
       std::cout << "call ";
-      std::cout << "0x" << std::hex << fetchWord(r[regA] + disp - 4);
+      std::cout << "0x" << std::hex << readWord(r[regA] + disp);
       std::cout << std::endl;
       break;
     default:
-      std::cout << "Emulator error. Invalid opcode." << std::endl;
+      std::cout << "Emulator error. Invalid instruction modifier." << std::endl;
       exit(1);
     }
   }
@@ -101,32 +120,32 @@ namespace emulator
     {
     case 0b1000:
       std::cout << "jmp ";
-      std::cout << "0x" << std::hex << fetchWord(r[regA] + disp - 4);
+      std::cout << "0x" << std::hex << readWord(r[regA] + disp);
       std::cout << std::endl;
       break;
     case 0b1001:
       std::cout << "beq ";
       std::cout << "%r" << std::dec << regB << ", "
                 << "%r" << std::dec << regC << ", ";
-      std::cout << "0x" << std::hex << fetchWord(r[regA] + disp - 4);
+      std::cout << "0x" << std::hex << readWord(r[regA] + disp);
       std::cout << std::endl;
       break;
     case 0b1010:
       std::cout << "bne ";
       std::cout << "%r" << std::dec << regB << ", "
                 << "%r" << std::dec << regC << ", ";
-      std::cout << "0x" << std::hex << fetchWord(r[regA] + disp - 4);
+      std::cout << "0x" << std::hex << readWord(r[regA] + disp);
       std::cout << std::endl;
       break;
     case 0b1011:
       std::cout << "bgt ";
       std::cout << "%r" << std::dec << regB << ", "
                 << "%r" << std::dec << regC << ", ";
-      std::cout << "0x" << std::hex << fetchWord(r[regA] + disp - 4);
+      std::cout << "0x" << std::hex << readWord(r[regA] + disp);
       std::cout << std::endl;
       break;
     default:
-      std::cout << "Emulator error. Invalid opcode." << std::endl;
+      std::cout << "Emulator error. Invalid instruction modifier." << std::endl;
       exit(1);
     }
   }
@@ -160,7 +179,7 @@ namespace emulator
       std::cout << "div ";
       break;
     default:
-      std::cout << "Invalid mod arithm." << std::endl;
+      std::cout << "Invalid instruction modifier." << std::endl;
       exit(1);
       break;
     }
@@ -189,7 +208,7 @@ namespace emulator
       std::cout << "xor %r" << std::dec << regB << ", %r" << std::dec << regC << std::endl;
       break;
     default:
-      std::cout << "Invalid mod logic." << std::endl;
+      std::cout << "Invalid instruction modifier." << std::endl;
       exit(1);
       break;
     }
@@ -211,7 +230,7 @@ namespace emulator
       std::cout << "shr ";
       break;
     default:
-      std::cout << "Invalid mod shift." << std::endl;
+      std::cout << "Invalid instruction modifier." << std::endl;
       exit(1);
       break;
     }
@@ -238,7 +257,7 @@ namespace emulator
     case 0b0010:
       std::cout << "st ";
       std::cout << "%r" << std::dec << regC << ", ";
-      std::cout << "0x" << std::hex << fetchWord(r[regA] + disp - 4);
+      std::cout << "0x" << std::hex << readWord(r[regA] + disp);
       std::cout << std::endl;
       break;
     case 0b0001:
@@ -246,7 +265,7 @@ namespace emulator
       std::cout << "%r" << std::dec << regC << std::endl;
       break;
     default:
-      std::cout << "Emulator error. Invalid opcode." << std::endl;
+      std::cout << "Emulator error. Invalid instruction modifier." << std::endl;
       exit(1);
     }
   }
@@ -270,7 +289,7 @@ namespace emulator
       std::cout << "ld ";
       if (regB == 15)
       {
-        std::cout << "$0x" << std::hex << fetchWord(r[regB] + disp - 4);
+        std::cout << "$0x" << std::hex << readWord(r[regB] + disp);
       }
       else
       {
@@ -280,7 +299,7 @@ namespace emulator
       break;
     case 0b0011:
       std::cout << "pop ";
-      std::cout << "%r" << std::dec << regA << "(" << disp << ")" << std::endl;
+      std::cout << "%r" << std::dec << regA << "(" << std::dec << disp << ")" << std::endl;
       break;
     case 0b0111:
       std::cout << "pop ";
@@ -299,12 +318,12 @@ namespace emulator
         csr = "ERROR_REG";
         break;
       }
-      std::cout << csr << "(" << disp << ")" << std::endl;
+      std::cout << csr << "(" << std::dec << disp << ")" << std::endl;
       break;
-    case 0b0000:
+    case 0b0100:
       std::cout << "csrwr ";
-      std::cout << "%r" << std::dec << regA << ", ";
-      switch (regB)
+      std::cout << "%r" << std::dec << regB << ", ";
+      switch (regA)
       {
       case 0:
         csr = "status";
@@ -321,9 +340,9 @@ namespace emulator
       }
       std::cout << "%" << csr << std::endl;
       break;
-    case 0b0100:
+    case 0b0000:
       std::cout << "csrrd ";
-      switch (regA)
+      switch (regB)
       {
       case 0:
         csr = "status";
@@ -339,7 +358,7 @@ namespace emulator
         break;
       }
       std::cout << "%" << csr << ", ";
-      std::cout << "%r" << std::dec << regB << std::endl;
+      std::cout << "%r" << std::dec << regA << std::endl;
       break;
     case 0b0001:
       std::cout << "%r" << regA << " = %r" << regB;
@@ -350,9 +369,21 @@ namespace emulator
       std::cout << disp << std::endl;
       break;
     default:
-      std::cout << "Emulator error. Invalid opcode." << std::endl;
+      std::cout << "Emulator error. Invalid instruction modifier." << std::endl;
       exit(1);
     }
+  }
+
+  void pushReg(uint32_t value)
+  {
+    SP -= 4;
+    writeWord(SP, value);
+  }
+
+  void popReg(uint32_t &reg)
+  {
+    reg = readWord(SP);
+    SP += 4;
   }
 
   void executeHalt()
@@ -381,46 +412,229 @@ namespace emulator
   void executeInt()
   {
     printInt();
+    pushReg(STATUS);
+    pushReg(PC);
+    CAUSE = 4;
+    STATUS &= ~(0x1);
+    PC = HANDLER;
   }
 
   void executeCall(uint32_t instruction)
   {
     printCall(instruction);
+    uint16_t mod = ((instruction & 0x0F000000) >> 24);
+    uint16_t regA = ((instruction & 0x00F00000) >> 20);
+    uint16_t regB = ((instruction & 0x000F0000) >> 16);
+    uint16_t disp = (instruction & 0x00000FFF);
+
+    switch (mod)
+    {
+    case 0b0001:
+      pushReg(PC);
+      PC = readWord(r[regA] + r[regB] + disp);
+      break;
+    default:
+      std::cout << "Emulator error. Invalid instruction modifier." << std::endl;
+      exit(1);
+    }
   }
 
   void executeBranch(uint32_t instruction)
   {
     printBranch(instruction);
+    uint16_t mod = ((instruction & 0x0F000000) >> 24);
+    uint16_t regA = ((instruction & 0x00F00000) >> 20);
+    uint16_t regB = ((instruction & 0x000F0000) >> 16);
+    uint16_t regC = ((instruction & 0x0000F000) >> 12);
+    uint16_t disp = (instruction & 0x00000FFF);
+
+    switch (mod)
+    {
+    case 0b1000:
+      PC = readWord(r[regA] + disp);
+      break;
+    case 0b1001:
+      std::cout << "BEQ " << r[regB] << " " << r[regC] << std::endl;
+      if (r[regB] == r[regC])
+      {
+        PC = readWord(r[regA] + disp);
+      }
+      break;
+    case 0b1010:
+      if (r[regB] != r[regC])
+      {
+        PC = readWord(r[regA] + disp);
+      }
+      break;
+    case 0b1011:
+      if (r[regB] > r[regC])
+      {
+        PC = readWord(r[regA] + disp);
+      }
+      break;
+    default:
+      std::cout << "Emulator error. Invalid instruction modifier." << std::endl;
+      exit(1);
+    }
   }
 
   void executeXchg(uint32_t instruction)
   {
     printXchg(instruction);
+    uint16_t regB = ((instruction & 0x000F0000) >> 16);
+    uint16_t regC = ((instruction & 0x0000F000) >> 12);
+    uint32_t temp = r[regB];
+    r[regB] = r[regC];
+    r[regC] = temp;
   }
 
   void executeArithmOp(uint32_t instruction)
   {
     printArithmOp(instruction);
+    uint16_t mod = ((instruction & 0x0F000000) >> 24);
+    uint16_t regA = ((instruction & 0x00F00000) >> 20);
+    uint16_t regB = ((instruction & 0x000F0000) >> 16);
+    uint16_t regC = ((instruction & 0x0000F000) >> 12);
+
+    switch (mod)
+    {
+    case 0b0000:
+      r[regA] = r[regB] + r[regC];
+      break;
+    case 0b0001:
+      r[regA] = r[regB] - r[regC];
+      break;
+    case 0b0010:
+      r[regA] = r[regB] * r[regC];
+      break;
+    case 0b0011:
+      r[regA] = r[regB] / r[regC];
+      break;
+    default:
+      std::cout << "Invalid instruction modifier." << std::endl;
+      exit(1);
+      break;
+    }
   }
 
   void executeLogOp(uint32_t instruction)
   {
     printLogOp(instruction);
+    uint16_t mod = ((instruction & 0x0F000000) >> 24);
+    uint16_t regA = ((instruction & 0x00F00000) >> 20);
+    uint16_t regB = ((instruction & 0x000F0000) >> 16);
+    uint16_t regC = ((instruction & 0x0000F000) >> 12);
+
+    switch (mod)
+    {
+    case 0b0000:
+      r[regA] = ~r[regB];
+      break;
+    case 0b0001:
+      r[regA] = r[regB] & r[regC];
+      break;
+    case 0b0010:
+      r[regA] = r[regB] | r[regC];
+      break;
+    case 0b0011:
+      r[regA] = r[regB] ^ r[regC];
+      break;
+    default:
+      std::cout << "Invalid instruction modifier." << std::endl;
+      exit(1);
+      break;
+    }
   }
 
   void executeShift(uint32_t instruction)
   {
     printShift(instruction);
+    uint16_t mod = ((instruction & 0x0F000000) >> 24);
+    uint16_t regA = ((instruction & 0x00F00000) >> 20);
+    uint16_t regB = ((instruction & 0x000F0000) >> 16);
+    uint16_t regC = ((instruction & 0x0000F000) >> 12);
+
+    switch (mod)
+    {
+    case 0b0000:
+      r[regA] = r[regB] << r[regC];
+      break;
+    case 0b0001:
+      r[regA] = r[regB] >> r[regC];
+      break;
+    default:
+      std::cout << "Invalid instruction modifier." << std::endl;
+      exit(1);
+      break;
+    }
   }
 
   void executeStore(uint32_t instruction)
   {
     printStore(instruction);
+    uint16_t mod = ((instruction & 0x0F000000) >> 24);
+    uint16_t regA = ((instruction & 0x00F00000) >> 20);
+    uint16_t regB = ((instruction & 0x000F0000) >> 16);
+    uint16_t regC = ((instruction & 0x0000F000) >> 12);
+    uint16_t disp = (instruction & 0x00000FFF);
+
+    switch (mod)
+    {
+    case 0b0000:
+      writeWord(r[regA] + r[regB] + disp, r[regC]);
+      break;
+    case 0b0010:
+      writeWord(readWord(r[regA] + r[regB] + disp), r[regC]);
+      break;
+    case 0b0001:
+      r[regA] = r[regA] - disp;
+      writeWord(r[regA], r[regC]);
+      break;
+    default:
+      std::cout << "Emulator error. Invalid instruction modifier." << std::endl;
+      exit(1);
+    }
   }
 
   void executeLoad(uint32_t instruction)
   {
     printLoad(instruction);
+    uint16_t mod = ((instruction & 0x0F000000) >> 24);
+    uint16_t regA = ((instruction & 0x00F00000) >> 20);
+    uint16_t regB = ((instruction & 0x000F0000) >> 16);
+    uint16_t regC = ((instruction & 0x0000F000) >> 12);
+    int16_t disp = (instruction & 0x00000FFF);
+    if (disp & 0x0800)
+    {
+      disp |= 0xF000; // Set sign bits for negative numbers
+    }
+
+    switch (mod)
+    {
+    case 0b0010:
+      r[regA] = readWord(r[regB] + r[regC] + disp);
+      break;
+    case 0b0011:
+      r[regA] = readWord(r[regB]);
+      r[regB] = r[regB] + disp;
+      break;
+    case 0b0111:
+      csr[regA] = readWord(r[regB]);
+      r[regB] = r[regB] + disp;
+      break;
+    case 0b0000:
+      r[regA] = csr[regB];
+      break;
+    case 0b0100:
+      csr[regA] = r[regB];
+      break;
+    case 0b0001:
+      r[regA] = r[regB] + disp;
+      break;
+    default:
+      std::cout << "Emulator error. Invalid instruction modifier." << std::endl;
+      exit(1);
+    }
   }
 
   void executeInstruction(uint32_t instruction)
@@ -477,11 +691,13 @@ namespace emulator
 
   void emulate()
   {
-    r[15] = 0x40000000;
+    r[0] = 0x00000000;
+    PC = 0x40000000;
     while (!stopEmulation)
     {
       uint32_t currentInstruction = fetchInstruction();
       executeInstruction(currentInstruction);
+      r[0] = 0x00000000;
     }
   }
 
