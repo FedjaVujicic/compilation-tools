@@ -40,13 +40,18 @@ namespace assembler
     return stoi(value);
   }
 
-  int32_t stringToSignedInt(std::string value)
+  int16_t stringToSignedInt(std::string value)
   {
     if (value.length() > 2)
     {
       if (value[0] == '0' && value[1] == 'x')
       {
-        return std::stoul(value, nullptr, 16);
+        int16_t ret = std::stoul(value, nullptr, 16);
+        if (ret & 0x0800)
+        {
+          ret |= 0xF000;
+        }
+        return ret;
       }
     }
     return stoi(value);
@@ -473,9 +478,9 @@ namespace assembler
     }
     if (instruction.mnemonic == "iret")
     {
-      outputWord(9, 1, 14, 14, 0, 0, 0, 4); // sp = sp + 4
+      outputWord(9, 1, 14, 14, 0, 0, 0, 4);      // sp = sp + 4
       outputWord(9, 7, 0, 14, 0, 0xF, 0xF, 0xC); // pop status, sp = sp - 4
-      outputWord(9, 3, 15, 14, 0, 0, 0, 8); // pop pc, sp = sp + 8
+      outputWord(9, 3, 15, 14, 0, 0, 0, 8);      // pop pc, sp = sp + 8
     }
     if (instruction.mnemonic == "call")
     {
@@ -627,7 +632,7 @@ namespace assembler
         }
         uint16_t regA = getGprIndex(instruction.reg1);
         uint16_t regB = getGprIndex(instruction.operand);
-        int32_t disp = stringToSignedInt(instruction.offset);
+        int16_t disp = stringToSignedInt(instruction.offset);
         outputWordDisp(9, 2, regA, regB, 0, disp);
       }
     }
@@ -654,7 +659,7 @@ namespace assembler
         }
         uint16_t regC = getGprIndex(instruction.reg1);
         uint16_t regA = getGprIndex(instruction.operand);
-        int32_t disp = stringToSignedInt(instruction.offset);
+        int16_t disp = stringToSignedInt(instruction.offset);
         outputWordDisp(8, 0, regA, 0, regC, disp);
       }
     }

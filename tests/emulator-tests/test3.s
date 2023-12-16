@@ -22,7 +22,7 @@ st %r1, my_data3
 st %r2, [%r4 + 4]
 st %r3, [%r4 + 8]
 ld [%r4 + 0], %r5
-ld [%r4 + 4], %r6
+ld [%r4 + 0x4], %r6
 ld [%r4 + 0x8], %r7
 
 
