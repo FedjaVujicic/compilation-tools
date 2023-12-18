@@ -536,29 +536,29 @@ namespace assembler
     if (instruction.mnemonic == "add")
     {
       uint16_t regA = getGprIndex(instruction.reg2);
-      uint16_t regB = getGprIndex(instruction.reg1);
-      uint16_t regC = getGprIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg2);
+      uint16_t regC = getGprIndex(instruction.reg1);
       outputWord(5, 0, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "sub")
     {
       uint16_t regA = getGprIndex(instruction.reg2);
-      uint16_t regB = getGprIndex(instruction.reg1);
-      uint16_t regC = getGprIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg2);
+      uint16_t regC = getGprIndex(instruction.reg1);
       outputWord(5, 1, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "mul")
     {
       uint16_t regA = getGprIndex(instruction.reg2);
-      uint16_t regB = getGprIndex(instruction.reg1);
-      uint16_t regC = getGprIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg2);
+      uint16_t regC = getGprIndex(instruction.reg1);
       outputWord(5, 2, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "div")
     {
       uint16_t regA = getGprIndex(instruction.reg2);
-      uint16_t regB = getGprIndex(instruction.reg1);
-      uint16_t regC = getGprIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg2);
+      uint16_t regC = getGprIndex(instruction.reg1);
       outputWord(5, 3, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "not")
@@ -571,36 +571,36 @@ namespace assembler
     if (instruction.mnemonic == "and")
     {
       uint16_t regA = getGprIndex(instruction.reg2);
-      uint16_t regB = getGprIndex(instruction.reg1);
-      uint16_t regC = getGprIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg2);
+      uint16_t regC = getGprIndex(instruction.reg1);
       outputWord(6, 1, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "or")
     {
       uint16_t regA = getGprIndex(instruction.reg2);
-      uint16_t regB = getGprIndex(instruction.reg1);
-      uint16_t regC = getGprIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg2);
+      uint16_t regC = getGprIndex(instruction.reg1);
       outputWord(6, 2, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "xor")
     {
       uint16_t regA = getGprIndex(instruction.reg2);
-      uint16_t regB = getGprIndex(instruction.reg1);
-      uint16_t regC = getGprIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg2);
+      uint16_t regC = getGprIndex(instruction.reg1);
       outputWord(6, 3, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "shl")
     {
       uint16_t regA = getGprIndex(instruction.reg2);
-      uint16_t regB = getGprIndex(instruction.reg1);
-      uint16_t regC = getGprIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg2);
+      uint16_t regC = getGprIndex(instruction.reg1);
       outputWord(7, 0, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "shr")
     {
       uint16_t regA = getGprIndex(instruction.reg2);
-      uint16_t regB = getGprIndex(instruction.reg1);
-      uint16_t regC = getGprIndex(instruction.reg2);
+      uint16_t regB = getGprIndex(instruction.reg2);
+      uint16_t regC = getGprIndex(instruction.reg1);
       outputWord(7, 1, regA, regB, regC, 0, 0, 0);
     }
     if (instruction.mnemonic == "ld")

@@ -454,7 +454,6 @@ namespace emulator
       PC = readWord(r[regA] + disp);
       break;
     case 0b1001:
-      std::cout << "BEQ " << r[regB] << " " << r[regC] << std::endl;
       if (r[regB] == r[regC])
       {
         PC = readWord(r[regA] + disp);
