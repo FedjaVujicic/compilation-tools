@@ -437,7 +437,7 @@ namespace linker
     createMemoryContent();
     outputMemoryContent();
 
-    outputSymbolTable();
+    // outputSymbolTable();
     // printSections();
     // printRelocationTables();
   }

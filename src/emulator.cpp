@@ -17,6 +17,7 @@ namespace emulator
   std::vector<uint32_t> r(15);
   std::vector<uint32_t> csr(3);
   bool stopEmulation = false;
+  bool printInstructions = false;
 
   void setInputFile(std::string inputFileName)
   {
@@ -411,7 +412,10 @@ namespace emulator
 
   void executeInt()
   {
-    printInt();
+    if (printInstructions)
+    {
+      printInt();
+    }
     pushReg(STATUS);
     pushReg(PC);
     CAUSE = 4;
@@ -421,7 +425,10 @@ namespace emulator
 
   void executeCall(uint32_t instruction)
   {
-    printCall(instruction);
+    if (printInstructions)
+    {
+      printCall(instruction);
+    }
     uint16_t mod = ((instruction & 0x0F000000) >> 24);
     uint16_t regA = ((instruction & 0x00F00000) >> 20);
     uint16_t regB = ((instruction & 0x000F0000) >> 16);
@@ -441,7 +448,10 @@ namespace emulator
 
   void executeBranch(uint32_t instruction)
   {
-    printBranch(instruction);
+    if (printInstructions)
+    {
+      printBranch(instruction);
+    }
     uint16_t mod = ((instruction & 0x0F000000) >> 24);
     uint16_t regA = ((instruction & 0x00F00000) >> 20);
     uint16_t regB = ((instruction & 0x000F0000) >> 16);
@@ -479,7 +489,10 @@ namespace emulator
 
   void executeXchg(uint32_t instruction)
   {
-    printXchg(instruction);
+    if (printInstructions)
+    {
+      printXchg(instruction);
+    }
     uint16_t regB = ((instruction & 0x000F0000) >> 16);
     uint16_t regC = ((instruction & 0x0000F000) >> 12);
     uint32_t temp = r[regB];
@@ -489,7 +502,10 @@ namespace emulator
 
   void executeArithmOp(uint32_t instruction)
   {
-    printArithmOp(instruction);
+    if (printInstructions)
+    {
+      printArithmOp(instruction);
+    }
     uint16_t mod = ((instruction & 0x0F000000) >> 24);
     uint16_t regA = ((instruction & 0x00F00000) >> 20);
     uint16_t regB = ((instruction & 0x000F0000) >> 16);
@@ -518,7 +534,10 @@ namespace emulator
 
   void executeLogOp(uint32_t instruction)
   {
-    printLogOp(instruction);
+    if (printInstructions)
+    {
+      printLogOp(instruction);
+    }
     uint16_t mod = ((instruction & 0x0F000000) >> 24);
     uint16_t regA = ((instruction & 0x00F00000) >> 20);
     uint16_t regB = ((instruction & 0x000F0000) >> 16);
@@ -547,7 +566,10 @@ namespace emulator
 
   void executeShift(uint32_t instruction)
   {
-    printShift(instruction);
+    if (printInstructions)
+    {
+      printShift(instruction);
+    }
     uint16_t mod = ((instruction & 0x0F000000) >> 24);
     uint16_t regA = ((instruction & 0x00F00000) >> 20);
     uint16_t regB = ((instruction & 0x000F0000) >> 16);
@@ -570,7 +592,10 @@ namespace emulator
 
   void executeStore(uint32_t instruction)
   {
-    printStore(instruction);
+    if (printInstructions)
+    {
+      printStore(instruction);
+    }
     uint16_t mod = ((instruction & 0x0F000000) >> 24);
     uint16_t regA = ((instruction & 0x00F00000) >> 20);
     uint16_t regB = ((instruction & 0x000F0000) >> 16);
@@ -597,7 +622,10 @@ namespace emulator
 
   void executeLoad(uint32_t instruction)
   {
-    printLoad(instruction);
+    if (printInstructions)
+    {
+      printLoad(instruction);
+    }
     uint16_t mod = ((instruction & 0x0F000000) >> 24);
     uint16_t regA = ((instruction & 0x00F00000) >> 20);
     uint16_t regB = ((instruction & 0x000F0000) >> 16);
