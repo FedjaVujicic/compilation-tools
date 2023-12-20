@@ -63,6 +63,6 @@ csrwr                       { return CSRWR; }
 \+                          { return '+'; }
 #.*(\n)*
 [ \r\t\n]
-.                           { std::cout << "LEXING ERROR" << std::endl; }
+.                           { std::cout << "(" << yylineno << ")" << "LEXING ERROR" << std::endl; }
 
 %%
