@@ -21,6 +21,7 @@ namespace assembler
   std::ofstream outputFile;
   std::unordered_set<std::string> globalSymbols;
   std::unordered_map<std::string, Symbol> symbolTable;
+  // Used for calculating offsets within a section
   std::unordered_map<std::string, Section> sectionTable;
   std::map<std::pair<std::string, uint32_t>, uint32_t> literalNumTable;
   std::map<std::pair<std::string, std::string>, uint32_t> literalSymTable;
@@ -117,6 +118,7 @@ namespace assembler
     symbolTable[symbolName] = {0, 0, SymbolType::SECTION, ScopeType::LOCAL, symbolName};
   }
 
+  // If an undefined symbol is used, it is treated as extern
   void addInstructionSymbol(std::string symbolName)
   {
     if (symbolTable.count(symbolName) > 0)
@@ -225,6 +227,7 @@ namespace assembler
     }
   }
 
+  // After passing through the section, assign addresses to every literal in the literal pool
   void literalPoolFirstPass()
   {
     for (auto &num : literalNumTable)
@@ -244,6 +247,27 @@ namespace assembler
       }
       sym.second = locationCounter - sectionTable[currentSection].base;
       locationCounter += 4;
+    }
+  }
+
+  void literalPoolSecondPass()
+  {
+    for (const auto &num : literalNumTable)
+    {
+      if (num.first.first != currentSection)
+      {
+        continue;
+      }
+      outputInteger((num.first).second);
+    }
+    for (const auto &sym : literalSymTable)
+    {
+      if (sym.first.first != currentSection)
+      {
+        continue;
+      }
+      outputInteger(0);
+      addRelocationInstruction(sym.first.second);
     }
   }
 
@@ -396,6 +420,23 @@ namespace assembler
 
   void handleDirectiveSecondPass(Directive directive)
   {
+    if (directive.mnemonic == "section")
+    {
+      if (currentSection != "ABS")
+      {
+        literalPoolSecondPass();
+      }
+      if (locationCounter % 8)
+      {
+        outputFile << std::endl;
+      }
+      while (locationCounter % 8)
+      {
+        ++locationCounter;
+      }
+      currentSection = directive.argList[0].value;
+      outputFile << "#." << currentSection << std::endl;
+    }
     if (directive.mnemonic == "word")
     {
       for (const auto &arg : directive.argList)
@@ -722,27 +763,6 @@ namespace assembler
     }
   }
 
-  void literalPoolSecondPass()
-  {
-    for (const auto &num : literalNumTable)
-    {
-      if (num.first.first != currentSection)
-      {
-        continue;
-      }
-      outputInteger((num.first).second);
-    }
-    for (const auto &sym : literalSymTable)
-    {
-      if (sym.first.first != currentSection)
-      {
-        continue;
-      }
-      outputInteger(0);
-      addRelocationInstruction(sym.first.second);
-    }
-  }
-
   void outputLiteralPool()
   {
     for (const auto &num : literalNumTable)
@@ -773,26 +793,6 @@ namespace assembler
     outputSymbolTable();
     for (const auto &line : parsedLines)
     {
-      if (line.type == "directive")
-      {
-        if (line.directive.mnemonic == "section")
-        {
-          if (currentSection != "ABS")
-          {
-            literalPoolSecondPass();
-          }
-          if (locationCounter % 8)
-          {
-            outputFile << std::endl;
-          }
-          while (locationCounter % 8)
-          {
-            ++locationCounter;
-          }
-          currentSection = line.directive.argList[0].value;
-          outputFile << "#." << currentSection << std::endl;
-        }
-      }
       if (isContentOutOfSection(line))
       {
         std::cout << "Line " << line.number << ": Error. Content defined outside of section." << std::endl;
