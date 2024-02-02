@@ -62,6 +62,7 @@ namespace emulator
     return instruction;
   }
 
+  // Returns a 4 byte word from memory for the specified address
   uint32_t readWord(uint32_t addr)
   {
     uint16_t byte1 = mem[addr];
@@ -72,6 +73,7 @@ namespace emulator
     return word;
   }
 
+  // Writes a 4 byte word to memory at the specified address
   void writeWord(uint32_t addr, uint32_t word)
   {
     uint16_t byte4 = (word & 0xFF000000) >> 24;
@@ -604,12 +606,15 @@ namespace emulator
 
     switch (mod)
     {
+    // st mem[reg], mem[reg + literal]
     case 0b0000:
       writeWord(r[regA] + r[regB] + disp, r[regC]);
       break;
+    // push
     case 0b0010:
       writeWord(readWord(r[regA] + r[regB] + disp), r[regC]);
       break;
+    // st mem[literal], mem[symbol]
     case 0b0001:
       r[regA] = r[regA] - disp;
       writeWord(r[regA], r[regC]);
@@ -638,24 +643,30 @@ namespace emulator
 
     switch (mod)
     {
+    // ld literal, symbol, mem[literal], mem[symbol], mem[reg], mem[reg + literal]
     case 0b0010:
       r[regA] = readWord(r[regB] + r[regC] + disp);
       break;
     case 0b0011:
+    // pop
       r[regA] = readWord(r[regB]);
       r[regB] = r[regB] + disp;
       break;
     case 0b0111:
+    // pop csr
       csr[regA] = readWord(r[regB]);
       r[regB] = r[regB] + disp;
       break;
     case 0b0000:
+    // csrwr
       r[regA] = csr[regB];
       break;
     case 0b0100:
+    // csrrd
       csr[regA] = r[regB];
       break;
     case 0b0001:
+    // for iret, sp = sp + 4
       r[regA] = r[regB] + disp;
       break;
     default:
