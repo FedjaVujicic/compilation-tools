@@ -3,7 +3,7 @@
   #include <iostream>
   #include <vector>
   #include "../inc/assembler.hpp"
-  #include "parser_data.hpp"
+  #include "../inc/parser_data.hpp"
 
   int yylex();
   void yyerror(const char *s);

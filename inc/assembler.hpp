@@ -5,7 +5,7 @@
 #include <fstream>
 #include <map>
 #include <cstdint>
-#include "../misc/parser_data.hpp"
+#include "parser_data.hpp"
 
 
 namespace assembler
