@@ -1,6 +1,6 @@
 # Compilation Tools
 
-Tools for executing simple assembly code for a GNU. This project has been done as part of a course at ETF 2023.
+Tools for executing simple assembly code. This project has been done as part of a course at ETF 2023.
 
 ## Features
 
